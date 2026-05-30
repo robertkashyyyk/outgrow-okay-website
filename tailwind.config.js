@@ -1,0 +1,92 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        ink: "var(--oo-ink)",
+        bone: "var(--oo-bone)",
+        accent: "var(--oo-accent)",
+        grey: {
+          100: "var(--oo-grey-100)",
+          200: "var(--oo-grey-200)",
+          300: "var(--oo-grey-300)",
+          400: "var(--oo-grey-400)",
+          500: "var(--oo-grey-500)",
+          600: "var(--oo-grey-600)",
+        },
+        pos: "var(--oo-pos)",
+        warn: "var(--oo-warn)",
+        neg: "var(--oo-neg)",
+        // Semantic (ground-aware)
+        ground: "var(--oo-ground)",
+        surface: "var(--oo-surface)",
+        content: "var(--oo-text)",
+        muted: "var(--oo-text-muted)",
+        faint: "var(--oo-text-faint)",
+        line: "var(--oo-border)",
+      },
+      fontFamily: {
+        heading: "var(--oo-font-heading)",
+        body: "var(--oo-font-body)",
+        mono: "var(--oo-font-mono)",
+      },
+      fontWeight: {
+        light: "300",
+        regular: "400",
+        semibold: "600",
+        bold: "700",
+        black: "900",
+      },
+      fontSize: {
+        xs: ["12px", { lineHeight: "1.4" }],
+        sm: ["14px", { lineHeight: "1.55" }],
+        base: ["16px", { lineHeight: "1.55" }],
+        md: ["20px", { lineHeight: "1.55" }],
+        lg: ["28px", { lineHeight: "1.35" }],
+        xl: ["40px", { lineHeight: "1.2" }],
+        "2xl": ["56px", { lineHeight: "1.2" }],
+        "3xl": ["80px", { lineHeight: "1.2" }],
+      },
+      lineHeight: {
+        tight: "1.2",
+        snug: "1.35",
+        normal: "1.55",
+        mono: "1.4",
+      },
+      spacing: {
+        1: "4px",
+        2: "8px",
+        3: "12px",
+        4: "16px",
+        5: "24px",
+        6: "32px",
+        7: "48px",
+        8: "64px",
+        9: "96px",
+        10: "128px",
+      },
+      maxWidth: {
+        prose: "720px",
+        content: "1080px",
+        wide: "1280px",
+      },
+      borderRadius: {
+        sm: "2px",
+        md: "4px",
+        lg: "6px",
+      },
+      transitionTimingFunction: {
+        out: "var(--oo-ease-out)",
+        "in-out": "var(--oo-ease-in-out)",
+      },
+      transitionDuration: {
+        fast: "150ms",
+        base: "200ms",
+        slow: "300ms",
+      },
+    },
+  },
+  plugins: [],
+};

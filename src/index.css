@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────────────────────────────────────────────────────
+   Outgrow Okay — design tokens
+   Single source of truth, derived from outgrow-okay-tokens.json.
+   Never hardcode a hex in components; reference these vars.
+   ─────────────────────────────────────────────────────────── */
+:root {
+  /* Raw palette */
+  --oo-ink: #16130f;
+  --oo-bone: #f3ece0;
+  --oo-accent: #b87d2a;
+  --oo-grey-100: #f0ebe3;
+  --oo-grey-200: #ddd5c8;
+  --oo-grey-300: #c4baa9;
+  --oo-grey-400: #a09080;
+  --oo-grey-500: #7a6e62;
+  --oo-grey-600: #554d44;
+  --oo-pos: #4a7c59;
+  --oo-warn: #a0692a;
+  --oo-neg: #c45c5c;
+
+  /* Type */
+  --oo-font-heading: "Archivo", "Space Grotesk", system-ui, sans-serif;
+  --oo-font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --oo-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Motion */
+  --oo-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --oo-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --oo-fast: 150ms;
+  --oo-base: 200ms;
+  --oo-slow: 300ms;
+
+  /* Semantic — light/bone ground (default; used by long-read & dashboard) */
+  --oo-ground: var(--oo-bone);
+  --oo-surface: var(--oo-grey-100);
+  --oo-text: var(--oo-ink);
+  --oo-text-muted: var(--oo-grey-500);
+  --oo-text-faint: var(--oo-grey-400);
+  --oo-border: var(--oo-grey-200);
+}
+
+/* Semantic — dark/ink ground (homepage). Switched via .dark on <html>.
+   Dark surfaces/borders are derived from bone+ink, never new hexes. */
+.dark {
+  --oo-ground: var(--oo-ink);
+  --oo-surface: color-mix(in srgb, var(--oo-bone) 6%, var(--oo-ink));
+  --oo-text: var(--oo-bone);
+  --oo-text-muted: var(--oo-grey-300);
+  --oo-text-faint: var(--oo-grey-400);
+  --oo-border: color-mix(in srgb, var(--oo-bone) 14%, transparent);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--oo-ground);
+    color: var(--oo-text);
+    font-family: var(--oo-font-body);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--oo-font-heading);
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+
+  ::selection {
+    background-color: var(--oo-accent);
+    color: var(--oo-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--oo-accent);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Every numeric element: mono face + tabular alignment */
+  .num {
+    font-family: var(--oo-font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* Eyebrow / kicker label */
+  .eyebrow {
+    font-family: var(--oo-font-mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--oo-text-muted);
+  }
+}
+
+/* Entrance: opacity + translateY only, gated behind reduced-motion */
+@media (prefers-reduced-motion: no-preference) {
+  .oo-enter {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: oo-enter var(--oo-base) var(--oo-ease-out) forwards;
+  }
+  @keyframes oo-enter {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
