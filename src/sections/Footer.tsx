@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 // Footer. Minimal. Legal line small and grey.
 export function Footer() {
   return (
@@ -16,6 +18,13 @@ export function Footer() {
         <a href="#" className="hover:text-content transition-colors duration-fast">
           Contact
         </a>
+        <span aria-hidden>·</span>
+        <Link
+          to="/progress-log"
+          className="hover:text-content transition-colors duration-fast"
+        >
+          Progress log
+        </Link>
       </div>
     </footer>
   );
