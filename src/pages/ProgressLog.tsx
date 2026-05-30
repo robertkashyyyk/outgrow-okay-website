@@ -31,6 +31,7 @@ const changelog: { date: string; items: string[] }[] = [
   {
     date: "2026-05-30",
     items: [
+      "Booking page (/book) — discovery-call flow live. Reuses the existing Kashyyyk Google Calendar booking system unchanged (same Supabase Edge Functions, same settings), re-skinned to Outgrow Okay: ink ground, ink-on-accent CTA, Archivo/IBM Plex, plain-talking voice. Both homepage CTAs now route here.",
       "Project scaffolded — Vite + React 18 + TS + Tailwind 3, in its own repo.",
       "Token foundation — tokens.json → CSS variables (--oo-*) referenced through the Tailwind config. No hardcoded hex; dark/light grounds switch via .dark on <html>.",
       "Fonts wired — Archivo (300/700/900), IBM Plex Sans (400/600), IBM Plex Mono (400/600). tabular-nums on every figure.",
@@ -52,18 +53,13 @@ const openItems: { title: string; status: Status; note: string }[] = [
     status: "open",
     note: "The brief specifies OUTGROW in Archivo Black (900). The delivered wordmark/lockup SVGs render OUTGROW at 700. Using the SVGs as supplied — flagged for a decision.",
   },
-  {
-    title: "CTA booking target",
-    status: "open",
-    note: "Both “Book a discovery call” buttons point to the #book section as a placeholder. Needs a real booking URL (Cal.com / Calendly / custom).",
-  },
 ];
 
 const roadmap: { title: string; status: Status; note: string }[] = [
   {
-    title: "Booking / discovery-call flow",
+    title: "Brand guidelines page",
     status: "planned",
-    note: "Wire the canonical CTA to a real scheduling tool.",
+    note: "Bring the exact Manus brand guidelines page to brand.outgrowokay.com (subdomain).",
   },
   {
     title: "Bone long-read pages",
