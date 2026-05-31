@@ -78,9 +78,23 @@ serve(async (req) => {
   const authHeader = req.headers.get('Authorization') ?? ''
   const token = authHeader.replace(/^Bearer\s+/i, '').trim()
 
+  // Decode a JWT payload without verifying — the gateway (verify_jwt = true) has
+  // already validated the signature against this project's secret, so a forged token
+  // never reaches here. We only read the role claim to distinguish a service-to-service
+  // caller from a signed-in user.
+  function jwtRole(jwt: string): string | null {
+    try {
+      const payload = jwt.split('.')[1]
+      const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+      return (JSON.parse(json) as { role?: string }).role ?? null
+    } catch {
+      return null
+    }
+  }
+
   let authorised = false
-  if (token && token === serviceKey) {
-    authorised = true // service-to-service call
+  if (token && (token === serviceKey || jwtRole(token) === 'service_role')) {
+    authorised = true // service-to-service call (booking function, scripts)
   } else if (token) {
     const { data: userData } = await admin.auth.getUser(token)
     const callerId = userData?.user?.id
