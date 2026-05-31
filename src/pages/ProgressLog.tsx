@@ -76,8 +76,8 @@ const openItems: { title: string; status: Status; note: string }[] = [
 const roadmap: { title: string; status: Status; note: string }[] = [
   {
     title: "Brand guidelines site",
-    status: "open",
-    note: "Built — the styleguide is cleaned (all telemetry stripped) and verified rendering as a self-contained static site in its own repo (outgrow-okay-brand). Pending: push the repo, stand up the DigitalOcean static site, and point brand.outgrowokay.com at it.",
+    status: "shipped",
+    note: "Live at brand.outgrowokay.com — the cleaned, de-telemetried styleguide deployed as its own DigitalOcean static site from the outgrow-okay-brand repo. DNS is managed in DO (the registrar is GoDaddy but nameservers point at DO), so the subdomain and SSL were wired automatically.",
   },
   {
     title: "Insight generation pipeline (Phase 2)",
