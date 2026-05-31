@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Lockup } from "../components/Logo";
 import { Footer } from "../sections/Footer";
 import { Reveal } from "../components/Reveal";
@@ -14,11 +14,14 @@ import {
 // Insights — the published long-form index. Reads live published posts from the OO
 // Supabase project (public-read RLS). When there's nothing live yet it shows a quiet
 // "coming soon" state rather than an empty page. Dark ground, accent reserved.
+const PAGE_SIZE = 12;
+
 export function Insights() {
   useGround("dark");
 
   const [posts, setPosts] = useState<PostSummary[] | null>(null);
   const [error, setError] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchPublishedPosts()
@@ -28,6 +31,17 @@ export function Insights() {
 
   const loading = posts === null && !error;
   const empty = posts !== null && posts.length === 0;
+
+  const pageCount = posts ? Math.max(1, Math.ceil(posts.length / PAGE_SIZE)) : 1;
+  const pagePosts = useMemo(
+    () => (posts ? posts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) : []),
+    [posts, page],
+  );
+
+  function goToPage(next: number) {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -81,7 +95,7 @@ export function Insights() {
           {/* Published posts */}
           {posts && posts.length > 0 && (
             <ul className="mt-12 border-t border-line">
-              {posts.map((post, i) => (
+              {pagePosts.map((post, i) => (
                 <li key={post.id} className="border-b border-line">
                   <Reveal delay={i * 60}>
                     <Link
@@ -113,6 +127,34 @@ export function Insights() {
                 </li>
               ))}
             </ul>
+          )}
+
+          {/* Pager */}
+          {posts && pageCount > 1 && (
+            <nav
+              aria-label="Insights pages"
+              className="mt-10 flex items-center justify-between gap-4"
+            >
+              <button
+                onClick={() => goToPage(page - 1)}
+                disabled={page === 1}
+                className="inline-flex items-center gap-2 text-sm text-muted hover:text-content transition-colors duration-fast disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <ChevronLeft size={16} strokeWidth={1.5} aria-hidden />
+                Newer
+              </button>
+              <span className="num text-xs text-faint uppercase tracking-wide">
+                Page {page} of {pageCount}
+              </span>
+              <button
+                onClick={() => goToPage(page + 1)}
+                disabled={page === pageCount}
+                className="inline-flex items-center gap-2 text-sm text-muted hover:text-content transition-colors duration-fast disabled:opacity-40 disabled:pointer-events-none"
+              >
+                Older
+                <ChevronRight size={16} strokeWidth={1.5} aria-hidden />
+              </button>
+            </nav>
           )}
         </div>
       </main>

@@ -89,41 +89,56 @@ export function InsightPost() {
 
           {resolved === "ready" && post && (
             <article>
-              <Reveal>
-                <p className="num text-xs text-faint uppercase tracking-wide">
-                  {formatPostDate(post.published_at)}
-                </p>
-                <h1 className="mt-4 font-heading font-black text-xl sm:text-2xl text-content">
-                  {post.title}
-                </h1>
-                {post.subtitle && (
-                  <p className="mt-5 max-w-prose text-md text-muted">
-                    {post.subtitle}
-                  </p>
-                )}
-                {post.tags.length > 0 && (
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    {post.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="eyebrow rounded-sm border border-line px-2 py-1 text-faint"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+              {/* Title block. With a cover, the image sits behind it at low opacity
+                  and fades into the ground — the Kashyyyk hero treatment. */}
+              <div className="relative">
+                {post.cover_image_url && (
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 -top-12 bottom-0 -z-10 overflow-hidden"
+                  >
+                    <img
+                      src={post.cover_image_url}
+                      alt=""
+                      className="h-full w-full object-cover opacity-[0.22]"
+                    />
+                    {/* Fade the image into the page ground on all edges. */}
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(to bottom, color-mix(in srgb, var(--oo-ground) 60%, transparent) 0%, color-mix(in srgb, var(--oo-ground) 20%, transparent) 40%, var(--oo-ground) 100%)",
+                      }}
+                    />
                   </div>
                 )}
-              </Reveal>
 
-              {post.cover_image_url && (
-                <Reveal delay={60}>
-                  <img
-                    src={post.cover_image_url}
-                    alt=""
-                    className="mt-8 w-full rounded-md border border-line"
-                  />
+                <Reveal>
+                  <p className="num text-xs text-faint uppercase tracking-wide">
+                    {formatPostDate(post.published_at)}
+                  </p>
+                  <h1 className="mt-4 font-heading font-black text-xl sm:text-2xl text-content">
+                    {post.title}
+                  </h1>
+                  {post.subtitle && (
+                    <p className="mt-5 max-w-prose text-md text-muted">
+                      {post.subtitle}
+                    </p>
+                  )}
+                  {post.tags.length > 0 && (
+                    <div className="mt-6 flex flex-wrap gap-2">
+                      {post.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="eyebrow rounded-sm border border-line px-2 py-1 text-faint"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </Reveal>
-              )}
+              </div>
 
               <Reveal delay={80}>
                 <div className="oo-article mt-9">

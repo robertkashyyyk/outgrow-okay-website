@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./lib/auth";
 import { AuthGuard } from "./guards/AuthGuard";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { Home } from "./pages/Home";
 import { Book } from "./pages/Book";
 import { ProgressLog } from "./pages/ProgressLog";
@@ -21,6 +22,7 @@ import { PortalDashboard } from "./pages/portal/PortalDashboard";
 function App() {
   return (
     <AuthProvider>
+      <ScrollToTop />
       <Routes>
         {/* Public marketing site */}
         <Route path="/" element={<Home />} />
