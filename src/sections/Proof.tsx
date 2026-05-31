@@ -94,7 +94,12 @@ export function Proof() {
         {strips.map((s, i) => (
           <Reveal key={s.figure} delay={160 + i * 70}>
             <div className="border-t border-line pt-5">
-              <p className="num text-xl text-accent leading-none">{s.figure}</p>
+              {/* Reserve two lines for the figure so the label + body areas
+                  anchor to the same baseline across all three columns, even
+                  when one figure wraps and the others don't. */}
+              <p className="num text-xl text-accent leading-tight min-h-[2.5em] flex items-start">
+                {s.figure}
+              </p>
               <p className="eyebrow mt-3">{s.label}</p>
               <p className="mt-3 text-base text-muted">{s.body}</p>
             </div>
