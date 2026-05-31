@@ -31,6 +31,9 @@ const changelog: { date: string; items: string[] }[] = [
   {
     date: "2026-05-31",
     items: [
+      "Auth + roles foundation (Phase 2a) — one Supabase Auth login for everyone (/login); role on the profiles row decides the destination (admin → Studio, customer → Portal). AuthProvider + AuthGuard enforce session and role client-side; RLS + an is_admin() helper and a role-protection trigger are the real gate. Shared AppShell chrome backs both the Studio and Portal areas.",
+      "No public self-registration (Phase 2a) — the sign-up UI and the client signUp capability were removed, and new signups are disabled at the Supabase project level. Accounts are created only by an admin or, later, by the booking flow.",
+      "Admin client provisioning (Phase 2b) — a Studio → Clients screen invites a client by email. The provision-account edge function (admin-gated; also callable service-to-service) mints a Supabase invite link without using Supabase's mailer, then sends an OO-branded invite via Resend from hello@outgrowokay.com. The invitee lands on /welcome already signed in and sets their own password — no password is ever handled client-side. Verified end to end.",
       "Insights reader live (/insights + /insights/:slug) — public long-form index and article pages, reading from Outgrow Okay's own Supabase (blog_posts table, public-read RLS for live published posts only). Markdown is rendered via react-markdown into a token-styled article wrapper; accent stays reserved.",
       "Insight back-catalogue migrated — all 65 articles from the old Kashyyyk studio imported into OO (60 published + 5 scheduled). Original publish dates preserved; leading duplicate H1s stripped. Cover images deferred — imported without covers to avoid hotlinking Kashyyyk storage; they'll be re-hosted into OO storage in Phase 2.",
       "Booking backend separated — create-booking and list-calendar-events now run in OO's own Supabase project (no longer Kashyyyk's), sending the OO-branded confirmation email from outgrowokay.com. create-booking hardened to surface calendar/insert/email failures instead of swallowing them, and now reports email_sent in its response.",
@@ -83,6 +86,11 @@ const roadmap: { title: string; status: Status; note: string }[] = [
     title: "Insight generation pipeline (Phase 2)",
     status: "planned",
     note: "Port + rebrand the old Kashyyyk blog generation and assistant edge functions into OO's voice, re-host the ~65 cover images into OO storage (deferred from the migration), and add the gated Studio editor. Newsletter follows in Phase 4.",
+  },
+  {
+    title: "Calls & Tasks pipeline (Phase 3)",
+    status: "planned",
+    note: "Promote a booked discovery call into a first-class 'call' both sides can see — upcoming in the client's Portal, scheduled in the Studio. After the Google Meet, the Gemini transcript (which lands in the founder's inbox) gets ingested into OO — open decision: Gmail API watch vs. a forwarding rule into an inbound endpoint, since either touches email. The transcript is then run through Claude (server-side edge function, key never client-side) to produce clean meeting notes plus two action lists: ours and the client's. Our actions flow into a Studio Tasks module; the client's surface in their Portal with a download they can take to their own task manager. The Portal then also becomes an accountability view — what the client still needs to complete and return. Build order: Tasks model first (it's the backbone), then the call object (small extension of bookings), then transcript → AI notes (the heaviest piece).",
   },
   {
     title: "Bone long-read pages",

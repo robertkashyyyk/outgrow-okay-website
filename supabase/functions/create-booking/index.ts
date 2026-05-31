@@ -136,10 +136,10 @@ serve(async (req) => {
     // Save to the OO project's bookings table. SUPABASE_URL is auto-injected by the
     // edge runtime, so this always targets whichever project the function is deployed
     // to — never hardcode a project ref here.
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const serviceKey =
       Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabase = createClient(supabaseUrl, serviceKey)
 
     const { error: insertError } = await supabase.from('bookings').insert({
       name,
@@ -155,6 +155,33 @@ serve(async (req) => {
     // failure visible in the logs instead of silently dropping the booking record.
     if (insertError) {
       console.error('bookings insert failed:', JSON.stringify(insertError))
+    }
+
+    // Auto-provision a customer account for the person who booked. This is a
+    // service-to-service call into provision-account (which mints an invite link and
+    // emails it via Resend). Best-effort and non-fatal: a booking must never fail
+    // because provisioning hiccuped, and a repeat booker who already has an account
+    // comes back 409 — we just log it and move on (no duplicate invite).
+    if (supabaseUrl && serviceKey) {
+      try {
+        const provRes = await fetch(`${supabaseUrl}/functions/v1/provision-account`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${serviceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, full_name: name, role: 'customer' }),
+        })
+        if (!provRes.ok) {
+          // 409 = already has an account (expected for repeat bookers); anything else
+          // is worth seeing in the logs but still must not break the booking.
+          console.error('provision-account returned', provRes.status, await provRes.text())
+        }
+      } catch (provErr) {
+        console.error('provision-account call failed:', (provErr as Error).message)
+      }
+    } else {
+      console.error('Missing SUPABASE_URL or service key — skipping account provisioning')
     }
 
     // Branded OO confirmation email — light (bone) ground, ink text, mono date line,
