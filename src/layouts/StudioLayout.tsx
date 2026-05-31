@@ -11,7 +11,7 @@ import { AppShell, type NavItem } from "./AppShell";
 // stubbed as "soon" so the shape of the studio is visible without dead links.
 const NAV: NavItem[] = [
   { to: "/studio", label: "Command Centre", icon: LayoutDashboard, end: true },
-  { to: "/studio/insights", label: "Insights", icon: FileText, soon: true },
+  { to: "/studio/insights", label: "Insights", icon: FileText },
   { to: "/studio/clients", label: "Clients", icon: Users },
   { to: "/studio/proposals", label: "Proposals", icon: FileSignature, soon: true },
   { to: "/studio/settings", label: "Settings", icon: Settings, soon: true },
