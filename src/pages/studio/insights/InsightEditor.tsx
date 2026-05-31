@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, ImagePlus, Loader2, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, Loader2, Sparkles, Tags, Wand2, X } from "lucide-react";
 import {
   getInsight,
   createInsight,
   updateInsight,
   uploadCover,
   slugify,
+  assistWrite,
+  suggestTags,
+  generateCover,
+  type ChatMessage,
 } from "../../../lib/studio-insights";
 import { STATUS_LABEL, type PostStatus } from "../../../types/insight";
 
@@ -52,6 +56,14 @@ export function InsightEditor() {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // AI helpers
+  const [genCover, setGenCover] = useState(false);
+  const [tagBusy, setTagBusy] = useState(false);
+  const [assistOpen, setAssistOpen] = useState(false);
+  const [assistPrompt, setAssistPrompt] = useState("");
+  const [assistReply, setAssistReply] = useState("");
+  const [assistBusy, setAssistBusy] = useState(false);
 
   useEffect(() => {
     if (!isEdit || !id) return;
@@ -111,6 +123,69 @@ export function InsightEditor() {
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  async function onGenerateCover() {
+    if (!title.trim()) {
+      setError("Add a title first — the cover is generated from it.");
+      return;
+    }
+    setGenCover(true);
+    setError(null);
+    try {
+      const url = await generateCover(title.trim(), excerpt.trim());
+      setCoverUrl(url);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGenCover(false);
+    }
+  }
+
+  async function onSuggestTags() {
+    if (!title.trim()) {
+      setError("Add a title first — tags are suggested from it.");
+      return;
+    }
+    setTagBusy(true);
+    setError(null);
+    try {
+      const suggested = await suggestTags(title.trim(), excerpt.trim());
+      // Merge with any existing tags, de-duped, preserving order.
+      const merged = Array.from(new Set([...parsedTags(), ...suggested]));
+      setTags(merged.join(", "));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setTagBusy(false);
+    }
+  }
+
+  async function onAssist() {
+    if (!assistPrompt.trim()) return;
+    setAssistBusy(true);
+    setError(null);
+    try {
+      // Give the assistant the current draft as context, then the instruction.
+      const history: ChatMessage[] = [];
+      if (content.trim()) {
+        history.push({
+          role: "user",
+          content: `Here is the current draft of the post (Markdown):\n\n${content}`,
+        });
+        history.push({
+          role: "assistant",
+          content: "Got it — I've read the draft. What would you like me to do?",
+        });
+      }
+      history.push({ role: "user", content: assistPrompt.trim() });
+      const reply = await assistWrite(history);
+      setAssistReply(reply);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setAssistBusy(false);
     }
   }
 
@@ -230,6 +305,33 @@ export function InsightEditor() {
             onChange={onPickCover}
             className="hidden"
           />
+          <div className="mt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading || genCover}
+              className="inline-flex items-center gap-2 text-sm text-muted hover:text-content transition-colors duration-fast disabled:opacity-60"
+            >
+              <ImagePlus size={15} strokeWidth={1.5} aria-hidden />
+              Upload
+            </button>
+            <span aria-hidden className="text-faint">
+              ·
+            </span>
+            <button
+              type="button"
+              onClick={() => void onGenerateCover()}
+              disabled={uploading || genCover}
+              className="inline-flex items-center gap-2 text-sm text-muted hover:text-content transition-colors duration-fast disabled:opacity-60"
+            >
+              {genCover ? (
+                <Loader2 size={15} className="motion-safe:animate-spin" aria-hidden />
+              ) : (
+                <Wand2 size={15} strokeWidth={1.5} aria-hidden />
+              )}
+              {genCover ? "Generating…" : "Generate with AI"}
+            </button>
+          </div>
         </div>
 
         <div>
@@ -276,9 +378,24 @@ export function InsightEditor() {
         </div>
 
         <div>
-          <label htmlFor="tags" className={LABEL}>
-            Tags <span className="text-faint">(comma-separated)</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="tags" className={LABEL}>
+              Tags <span className="text-faint">(comma-separated)</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => void onSuggestTags()}
+              disabled={tagBusy}
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-content transition-colors duration-fast disabled:opacity-60 mb-2"
+            >
+              {tagBusy ? (
+                <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden />
+              ) : (
+                <Tags size={14} strokeWidth={1.5} aria-hidden />
+              )}
+              {tagBusy ? "Suggesting…" : "Suggest"}
+            </button>
+          </div>
           <input
             id="tags"
             type="text"
@@ -336,9 +453,19 @@ export function InsightEditor() {
         </div>
 
         <div>
-          <label htmlFor="content" className={LABEL}>
-            Content <span className="text-faint">(Markdown)</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="content" className={LABEL}>
+              Content <span className="text-faint">(Markdown)</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setAssistOpen((v) => !v)}
+              className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-content transition-colors duration-fast mb-2"
+            >
+              <Sparkles size={14} strokeWidth={1.5} aria-hidden />
+              Writing assistant
+            </button>
+          </div>
           <textarea
             id="content"
             rows={22}
@@ -346,6 +473,76 @@ export function InsightEditor() {
             onChange={(e) => setContent(e.target.value)}
             className={`${FIELD} font-mono text-sm leading-relaxed resize-y`}
           />
+
+          {assistOpen && (
+            <div className="mt-3 rounded-lg border border-line bg-surface p-4">
+              <p className="text-sm text-muted">
+                Ask for a draft, an intro, a tighter rewrite — the assistant sees
+                the current content as context.
+              </p>
+              <textarea
+                rows={3}
+                value={assistPrompt}
+                onChange={(e) => setAssistPrompt(e.target.value)}
+                placeholder="e.g. Draft an opening that frames the bottleneck problem"
+                className={`${FIELD} mt-3 resize-y`}
+              />
+              <div className="mt-3 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => void onAssist()}
+                  disabled={assistBusy || !assistPrompt.trim()}
+                  className="inline-flex items-center gap-2 border border-line bg-ground px-4 py-2 font-heading font-bold text-sm text-content rounded-md transition-colors duration-fast hover:border-content disabled:opacity-60"
+                >
+                  {assistBusy ? (
+                    <Loader2 size={15} className="motion-safe:animate-spin" aria-hidden />
+                  ) : (
+                    <Sparkles size={15} strokeWidth={1.5} aria-hidden />
+                  )}
+                  {assistBusy ? "Thinking…" : "Ask"}
+                </button>
+              </div>
+
+              {assistReply && (
+                <div className="mt-4 border-t border-line pt-4">
+                  <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-content">
+                    {assistReply}
+                  </pre>
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setContent((c) => (c ? `${c}\n\n${assistReply}` : assistReply))
+                      }
+                      className="text-sm text-muted hover:text-content transition-colors duration-fast"
+                    >
+                      Append to content
+                    </button>
+                    <span aria-hidden className="text-faint">
+                      ·
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setContent(assistReply)}
+                      className="text-sm text-muted hover:text-content transition-colors duration-fast"
+                    >
+                      Replace content
+                    </button>
+                    <span aria-hidden className="text-faint">
+                      ·
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAssistReply("")}
+                      className="text-sm text-muted hover:text-content transition-colors duration-fast"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {error && (

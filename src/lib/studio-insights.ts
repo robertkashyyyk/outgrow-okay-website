@@ -111,3 +111,114 @@ export async function uploadCover(file: File): Promise<string> {
 export function statusCount(posts: Insight[], status: PostStatus): number {
   return posts.filter((p) => p.status === status).length;
 }
+
+// AI helpers ----------------------------------------------------------------
+// These call admin-gated edge functions (blog-assistant / generate-blog-image).
+// The authenticated session token rides along automatically via functions.invoke,
+// so the function can confirm the caller is an admin before spending API tokens.
+
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+/** Conversational writing help. Returns the assistant's reply text. */
+export async function assistWrite(messages: ChatMessage[]): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("blog-assistant", {
+    body: { mode: "assist", messages },
+  });
+  if (error) throw new Error(await readInvokeError(error));
+  if (data?.error) throw new Error(String(data.error));
+  return (data?.suggestion as string) ?? "";
+}
+
+/** Suggest a handful of tags from the title + excerpt. */
+export async function suggestTags(
+  title: string,
+  excerpt: string,
+): Promise<string[]> {
+  const { data, error } = await supabase.functions.invoke("blog-assistant", {
+    body: { mode: "tags", title, excerpt },
+  });
+  if (error) throw new Error(await readInvokeError(error));
+  if (data?.error) throw new Error(String(data.error));
+  return (data?.tags as string[]) ?? [];
+}
+
+/** Generate a cover image (DALL-E 3, OO aesthetic); returns its public URL. */
+export async function generateCover(
+  title: string,
+  excerpt: string,
+): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("generate-blog-image", {
+    body: { title, excerpt },
+  });
+  if (error) throw new Error(await readInvokeError(error));
+  if (data?.error) throw new Error(String(data.error));
+  if (!data?.url) throw new Error("No image URL returned.");
+  return data.url as string;
+}
+
+// Content Engine: batch generation -----------------------------------------
+
+export type GenerationJob = {
+  id: string;
+  type: string;
+  status: "running" | "complete" | "failed";
+  progress: number;
+  total: number;
+  message: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** The most recent generation job, if any (used to show a progress banner). */
+export async function latestJob(): Promise<GenerationJob | null> {
+  const { data, error } = await supabase
+    .from("generation_jobs")
+    .select("id,type,status,progress,total,message,created_at,updated_at")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as GenerationJob | null) ?? null;
+}
+
+/**
+ * Kick off a background batch. Uses a keepalive fetch with the caller's access
+ * token so the request survives navigating away immediately — the edge function
+ * runs the pipeline in the background regardless and reports via generation_jobs.
+ */
+export async function startBatch(opts: {
+  theme: string;
+  slots: string[];
+  previousTitles: string[];
+  backfill: boolean;
+}): Promise<void> {
+  const { data: sess } = await supabase.auth.getSession();
+  const token = sess.session?.access_token;
+  if (!token) throw new Error("Not signed in.");
+  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-blog-batch`;
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(opts),
+    keepalive: true,
+  });
+}
+
+// functions.invoke wraps non-2xx responses in a FunctionsHttpError whose body is
+// the Response; pull the JSON message out for a useful error.
+async function readInvokeError(error: unknown): Promise<string> {
+  const ctx = (error as { context?: Response }).context;
+  if (ctx && typeof ctx.json === "function") {
+    try {
+      const body = await ctx.json();
+      if (body?.error) return String(body.error);
+    } catch {
+      /* fall through */
+    }
+  }
+  return (error as Error).message ?? "Request failed.";
+}

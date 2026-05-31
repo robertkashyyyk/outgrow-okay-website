@@ -16,3 +16,14 @@ verify_jwt = true
 # function presenting the service-role key) before creating anyone.
 [functions.provision-account]
 verify_jwt = true
+
+# Insights AI layer — admin-only. The gateway validates the JWT; each function then
+# confirms the caller is an admin before spending API tokens (Anthropic / OpenAI).
+[functions.blog-assistant]
+verify_jwt = true
+
+[functions.generate-blog-image]
+verify_jwt = true
+
+[functions.generate-blog-batch]
+verify_jwt = true

@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, ExternalLink, Trash2, Rocket } from "lucide-react";
+import { Plus, Pencil, ExternalLink, Trash2, Rocket, Wand2, Loader2 } from "lucide-react";
 import {
   listInsights,
   deleteInsight,
   goLive,
+  latestJob,
+  type GenerationJob,
 } from "../../../lib/studio-insights";
 import { formatPostDate } from "../../../lib/insights";
 import { STATUS_LABEL, type Insight, type PostStatus } from "../../../types/insight";
@@ -49,6 +51,8 @@ export function InsightsList() {
   const [tab, setTab] = useState<Tab>("all");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [job, setJob] = useState<GenerationJob | null>(null);
+  const wasRunning = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -62,6 +66,33 @@ export function InsightsList() {
     })();
     return () => {
       active = false;
+    };
+  }, []);
+
+  // Poll the latest generation job; when one finishes, refresh the list.
+  useEffect(() => {
+    let active = true;
+    async function tick() {
+      try {
+        const j = await latestJob();
+        if (!active) return;
+        setJob(j);
+        if (j?.status === "running") {
+          wasRunning.current = true;
+        } else if (wasRunning.current) {
+          // A job we were watching just finished — reload posts once.
+          wasRunning.current = false;
+          listInsights().then((data) => active && setPosts(data)).catch(() => {});
+        }
+      } catch {
+        /* polling is best-effort */
+      }
+    }
+    void tick();
+    const id = setInterval(tick, 4000);
+    return () => {
+      active = false;
+      clearInterval(id);
     };
   }, []);
 
@@ -116,14 +147,54 @@ export function InsightsList() {
             Insights
           </h1>
         </div>
-        <Link
-          to="/studio/insights/new"
-          className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-heading font-bold text-base text-ink rounded-md transition-transform duration-fast ease-out motion-safe:active:scale-[0.97] hover:brightness-105 shrink-0"
-        >
-          <Plus size={18} strokeWidth={2} aria-hidden />
-          New insight
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            to="/studio/insights/engine"
+            className="inline-flex items-center gap-2 border border-line bg-surface px-5 py-3 font-heading font-bold text-base text-content rounded-md transition-colors duration-fast hover:border-content"
+          >
+            <Wand2 size={18} strokeWidth={1.5} aria-hidden />
+            Content engine
+          </Link>
+          <Link
+            to="/studio/insights/new"
+            className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-heading font-bold text-base text-ink rounded-md transition-transform duration-fast ease-out motion-safe:active:scale-[0.97] hover:brightness-105"
+          >
+            <Plus size={18} strokeWidth={2} aria-hidden />
+            New insight
+          </Link>
+        </div>
       </div>
+
+      {/* Generation job progress */}
+      {job && job.status === "running" && (
+        <div className="mt-6 flex items-center gap-3 rounded-md border border-line bg-surface px-4 py-3">
+          <Loader2 size={16} className="motion-safe:animate-spin text-muted shrink-0" aria-hidden />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm text-content truncate">
+              {job.message ?? "Generating…"}
+            </p>
+            {job.total > 0 && (
+              <div className="mt-2 h-1 w-full rounded-full bg-line overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-accent transition-all duration-fast"
+                  style={{ width: `${Math.min(100, Math.round((job.progress / job.total) * 100))}%` }}
+                />
+              </div>
+            )}
+          </div>
+          <span className="num text-xs text-faint shrink-0">
+            {job.progress}/{job.total}
+          </span>
+        </div>
+      )}
+      {job && job.status === "failed" && (
+        <div
+          className="mt-6 rounded-md border border-line px-4 py-3 text-sm"
+          style={{ color: "var(--oo-neg)" }}
+        >
+          Last generation failed: {job.message ?? "unknown error"}
+        </div>
+      )}
 
       {/* Filter tabs */}
       <div className="mt-7 flex flex-wrap gap-1 border-b border-line">

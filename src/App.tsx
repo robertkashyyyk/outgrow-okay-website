@@ -15,6 +15,7 @@ import { CommandCentre } from "./pages/studio/CommandCentre";
 import { Clients } from "./pages/studio/Clients";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
+import { ContentEngine } from "./pages/studio/insights/ContentEngine";
 import { PortalDashboard } from "./pages/portal/PortalDashboard";
 
 function App() {
@@ -44,6 +45,7 @@ function App() {
         >
           <Route index element={<CommandCentre />} />
           <Route path="insights" element={<InsightsList />} />
+          <Route path="insights/engine" element={<ContentEngine />} />
           <Route path="insights/new" element={<InsightEditor />} />
           <Route path="insights/:id/edit" element={<InsightEditor />} />
           <Route path="clients" element={<Clients />} />
