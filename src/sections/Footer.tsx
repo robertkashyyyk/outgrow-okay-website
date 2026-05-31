@@ -11,9 +11,12 @@ export function Footer() {
           LinkedIn
         </a>
         <span aria-hidden>·</span>
-        <a href="#" className="hover:text-content transition-colors duration-fast">
+        <Link
+          to="/privacy"
+          className="hover:text-content transition-colors duration-fast"
+        >
           Privacy
-        </a>
+        </Link>
         <span aria-hidden>·</span>
         <a href="#" className="hover:text-content transition-colors duration-fast">
           Contact

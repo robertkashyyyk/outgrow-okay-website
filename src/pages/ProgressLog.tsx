@@ -29,6 +29,19 @@ function StatusTag({ status }: { status: Status }) {
 
 const changelog: { date: string; items: string[] }[] = [
   {
+    date: "2026-05-31",
+    items: [
+      "Insights reader live (/insights + /insights/:slug) — public long-form index and article pages, reading from Outgrow Okay's own Supabase (blog_posts table, public-read RLS for live published posts only). Markdown is rendered via react-markdown into a token-styled article wrapper; accent stays reserved.",
+      "Insight back-catalogue migrated — all 65 articles from the old Kashyyyk studio imported into OO (60 published + 5 scheduled). Original publish dates preserved; leading duplicate H1s stripped. Cover images deferred — imported without covers to avoid hotlinking Kashyyyk storage; they'll be re-hosted into OO storage in Phase 2.",
+      "Booking backend separated — create-booking and list-calendar-events now run in OO's own Supabase project (no longer Kashyyyk's), sending the OO-branded confirmation email from outgrowokay.com. create-booking hardened to surface calendar/insert/email failures instead of swallowing them, and now reports email_sent in its response.",
+      "Privacy page live (/privacy) — plain-English, grounded in the only data the site collects (the discovery-call booking form). No analytics or tracking. The footer Privacy link now points to it.",
+      "Brand styleguide prepared for brand.outgrowokay.com — the Manus-built styleguide stripped of all telemetry (debug-collector, the inline manus-runtime, manus-analytics) and the duplicated logo dir, then verified rendering as a clean self-contained static site in its own repo (outgrow-okay-brand).",
+      "Logo + favicon fixed — the OO monogram now renders as two true O's via clipPath transparency (it was showing as facing crescents on any non-matching background); favicon path corrected to /brand/favicon.svg; OUTGROW set to Archivo Black (900).",
+      "Proof strips aligned — reserved a two-line figure height so the label and body areas anchor to the same baseline across all three columns.",
+      "Nav tidy — Progress Log removed from the public footer; Insights placed in its slot. This log stays reachable directly.",
+    ],
+  },
+  {
     date: "2026-05-30",
     items: [
       "Booking page (/book) — discovery-call flow live. Reuses the existing Kashyyyk Google Calendar booking system unchanged (same Supabase Edge Functions, same settings), re-skinned to Outgrow Okay: ink ground, ink-on-accent CTA, Archivo/IBM Plex, plain-talking voice. Both homepage CTAs now route here.",
@@ -44,22 +57,32 @@ const changelog: { date: string; items: string[] }[] = [
 
 const openItems: { title: string; status: Status; note: string }[] = [
   {
-    title: "Favicon legibility at 16px",
-    status: "open",
-    note: "The OO monogram uses two thin-stroke circles with a real gap. At favicon size the strokes are thin — borderline. Revisit in a real browser tab; may need a heavier-stroke favicon-only variant.",
+    title: "Wordmark weight: 700 vs 900",
+    status: "shipped",
+    note: "Resolved — OUTGROW now renders in Archivo Black (900) per the brief. Favicon legibility was the same issue and is fixed too: the monogram now uses clipPath transparency for two true O's, so it holds up at 16px.",
   },
   {
-    title: "Wordmark weight: 700 vs 900",
+    title: "Scheduled insights have no scheduler yet",
     status: "open",
-    note: "The brief specifies OUTGROW in Archivo Black (900). The delivered wordmark/lockup SVGs render OUTGROW at 700. Using the SVGs as supplied — flagged for a decision.",
+    note: "5 of the 65 migrated articles are status=scheduled with future publish dates, but OO has no cron to flip them live. For now they stay hidden from the public reader (RLS only serves published posts with a past published_at). Either flip them manually or wait for the Phase 2 pipeline to own scheduling.",
+  },
+  {
+    title: "Footer links: LinkedIn + Contact",
+    status: "open",
+    note: "Privacy and Insights now point somewhere real. LinkedIn and Contact are still placeholder anchors — Contact lands when the contact route ships; LinkedIn needs the real profile URL.",
   },
 ];
 
 const roadmap: { title: string; status: Status; note: string }[] = [
   {
-    title: "Brand guidelines page",
+    title: "Brand guidelines site",
+    status: "open",
+    note: "Built — the styleguide is cleaned (all telemetry stripped) and verified rendering as a self-contained static site in its own repo (outgrow-okay-brand). Pending: push the repo, stand up the DigitalOcean static site, and point brand.outgrowokay.com at it.",
+  },
+  {
+    title: "Insight generation pipeline (Phase 2)",
     status: "planned",
-    note: "Bring the exact Manus brand guidelines page to brand.outgrowokay.com (subdomain).",
+    note: "Port + rebrand the old Kashyyyk blog generation and assistant edge functions into OO's voice, re-host the ~65 cover images into OO storage (deferred from the migration), and add the gated Studio editor. Newsletter follows in Phase 4.",
   },
   {
     title: "Bone long-read pages",
@@ -82,9 +105,9 @@ const roadmap: { title: string; status: Status; note: string }[] = [
     note: "A way in for people who aren't ready to book yet.",
   },
   {
-    title: "Legal pages",
+    title: "Terms page",
     status: "planned",
-    note: "Privacy + terms. Footer LinkedIn / Privacy / Contact links are placeholders for now.",
+    note: "Privacy is live (/privacy). Terms still to write.",
   },
   {
     title: "Hosting, CI deploy + DNS cutover",
