@@ -118,6 +118,15 @@ serve(async (req) => {
     )
     const calEvent = await calRes.json()
 
+    // If Google rejected the event, fail loudly — there is no booking without it.
+    if (!calRes.ok || !calEvent.id) {
+      console.error('Google Calendar event creation failed:', calRes.status, JSON.stringify(calEvent.error ?? calEvent))
+      return new Response(
+        JSON.stringify({ error: 'Could not create the calendar event', detail: calEvent.error ?? null }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
     const meetLink = calEvent.hangoutLink
       ?? calEvent.conferenceData?.entryPoints?.find((e: { entryPointType: string; uri: string }) => e.entryPointType === 'video')?.uri
       ?? null
@@ -132,7 +141,7 @@ serve(async (req) => {
       Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    await supabase.from('bookings').insert({
+    const { error: insertError } = await supabase.from('bookings').insert({
       name,
       email,
       business_name: business_name ?? null,
@@ -142,9 +151,17 @@ serve(async (req) => {
       meet_link:     meetLink,
       status:        'confirmed',
     })
+    // The calendar event already exists, so don't fail the request — but make the
+    // failure visible in the logs instead of silently dropping the booking record.
+    if (insertError) {
+      console.error('bookings insert failed:', JSON.stringify(insertError))
+    }
 
     // Branded OO confirmation email — light (bone) ground, ink text, mono date line,
     // Meet link as the single clear action. Short by design.
+    let emailSent = false
+    if (!resendKey) console.error('RESEND_API_KEY not set — skipping confirmation email')
+    if (resendKey && !meetLink) console.error('No Meet link on event — skipping confirmation email')
     if (resendKey && meetLink) {
       const { full: formattedTime, tz } = formatDateParts(scheduled_at)
       const firstName = name.split(' ')[0]
@@ -184,33 +201,31 @@ serve(async (req) => {
         </div>
       `
 
-      await Promise.all([
-        fetch('https://api.resend.com/emails', {
+      const sendEmail = async (label: string, from: string, to: string, subject: string, html: string) => {
+        const r = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from:    FROM_CLIENT,
-            to:      [email],
-            subject: `Your discovery call is confirmed — ${formattedTime}`,
-            html:    clientHtml,
-          }),
-        }),
-        fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from:    FROM_INTERNAL,
-            to:      [INTERNAL_TO],
-            subject: `New booking: ${name} — ${formattedTime}`,
-            html:    internalHtml,
-          }),
-        }),
+          body: JSON.stringify({ from, to: [to], subject, html }),
+        })
+        if (!r.ok) {
+          const body = await r.text()
+          console.error(`Resend ${label} email failed:`, r.status, body)
+          return false
+        }
+        return true
+      }
+
+      const [clientOk] = await Promise.all([
+        sendEmail('client', FROM_CLIENT, email, `Your discovery call is confirmed — ${formattedTime}`, clientHtml),
+        sendEmail('internal', FROM_INTERNAL, INTERNAL_TO, `New booking: ${name} — ${formattedTime}`, internalHtml),
       ])
+      emailSent = clientOk
     }
 
-    return new Response(JSON.stringify({ success: true, meet_link: meetLink, event_id: googleEventId }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ success: true, meet_link: meetLink, event_id: googleEventId, email_sent: emailSent }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
 
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
