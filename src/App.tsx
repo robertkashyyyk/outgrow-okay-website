@@ -8,9 +8,11 @@ import { Insights } from "./pages/Insights";
 import { InsightPost } from "./pages/InsightPost";
 import { Privacy } from "./pages/Privacy";
 import { Login } from "./pages/Login";
+import { Welcome } from "./pages/Welcome";
 import { StudioLayout } from "./layouts/StudioLayout";
 import { PortalLayout } from "./layouts/PortalLayout";
 import { CommandCentre } from "./pages/studio/CommandCentre";
+import { Clients } from "./pages/studio/Clients";
 import { PortalDashboard } from "./pages/portal/PortalDashboard";
 
 function App() {
@@ -26,6 +28,8 @@ function App() {
 
         {/* One login for everyone; role decides the destination. */}
         <Route path="/login" element={<Login />} />
+        {/* Invited users land here from the email link to set their password. */}
+        <Route path="/welcome" element={<Welcome />} />
 
         {/* Admin back office */}
         <Route
@@ -37,6 +41,7 @@ function App() {
           }
         >
           <Route index element={<CommandCentre />} />
+          <Route path="clients" element={<Clients />} />
         </Route>
 
         {/* Customer area */}

@@ -10,3 +10,9 @@ verify_jwt = true
 
 [functions.list-calendar-events]
 verify_jwt = true
+
+# Account provisioning — admin-only. verify_jwt rejects anonymous callers at the
+# gateway; the function itself then confirms the caller is an admin (or the booking
+# function presenting the service-role key) before creating anyone.
+[functions.provision-account]
+verify_jwt = true
