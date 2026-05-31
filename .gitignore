@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Supabase — never commit local secrets or CLI state
+supabase/.env
+supabase/.branches
+supabase/.temp
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

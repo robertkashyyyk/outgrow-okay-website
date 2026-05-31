@@ -52,7 +52,7 @@ export function Stages() {
       <Reveal delay={120}>
         <p className="mt-6 text-sm text-faint">
           All retainers, not projects. The first month of any stage is the
-          diagnosis.
+          diagnosis. Rolling monthly &mdash; no long contracts.
         </p>
       </Reveal>
     </Section>

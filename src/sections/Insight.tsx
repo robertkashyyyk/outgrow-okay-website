@@ -21,7 +21,7 @@ export function Insight() {
             because you&rsquo;re inside it every day &mdash; and &ldquo;doing
             okay&rdquo; is exactly comfortable enough to stop you looking.
           </p>
-          <p className="text-content">We find the one thing. Then we deal with it.</p>
+          <p className="text-content">We find what matters most. Then we deal with it.</p>
         </div>
       </Reveal>
     </Section>

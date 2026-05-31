@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Video, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarPlus, ChevronLeft, ChevronRight, Video, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Lockup } from "../components/Logo";
+import { Footer } from "../sections/Footer";
 import { useGround } from "../components/useGround";
 
-// Booking flow. Reuses the same Supabase Edge Functions + Google Calendar config
-// as the Kashyyyk site (Outgrow Okay is a trading name of Kashyyyk Ltd) — only the
-// skin and voice change. Slot logic is identical: weekday 09–16 UK time, 14-day
-// window, live availability via list-calendar-events, booking via create-booking.
+// Booking flow. Backend lives in the OO's own Supabase project (separate from
+// Kashyyyk): list-calendar-events for availability, create-booking for the booking +
+// OO-branded confirmation email from outgrowokay.com. Google Calendar is
+// robert@kashyyyk.co.uk's personal calendar (Outgrow Okay is a trading name of
+// Kashyyyk Ltd). Slot logic: weekday 09–16 UK time, 14-day window.
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
@@ -32,6 +34,71 @@ function formatDayLabel(d: Date) {
 }
 function formatConfirmDate(d: Date) {
   return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
+// Calendar export — "add to calendar" is the useful action right after booking.
+const CAL_TITLE = "Discovery call — Outgrow Okay";
+
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+// UTC stamp: YYYYMMDDTHHMMSSZ (used by both .ics and the Google add link)
+function toUTCStamp(d: Date): string {
+  return (
+    d.getUTCFullYear() +
+    pad(d.getUTCMonth() + 1) +
+    pad(d.getUTCDate()) +
+    "T" +
+    pad(d.getUTCHours()) +
+    pad(d.getUTCMinutes()) +
+    pad(d.getUTCSeconds()) +
+    "Z"
+  );
+}
+
+function buildICS(slot: Date, meetLink: string | null): string {
+  const end = new Date(slot.getTime() + 60 * 60 * 1000);
+  const details = meetLink ? `Join here: ${meetLink}` : "";
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Outgrow Okay//Booking//EN",
+    "BEGIN:VEVENT",
+    `UID:${slot.getTime()}@outgrowokay.com`,
+    `DTSTAMP:${toUTCStamp(new Date())}`,
+    `DTSTART:${toUTCStamp(slot)}`,
+    `DTEND:${toUTCStamp(end)}`,
+    `SUMMARY:${CAL_TITLE}`,
+    details ? `DESCRIPTION:${details}` : null,
+    meetLink ? `LOCATION:${meetLink}` : null,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ]
+    .filter(Boolean)
+    .join("\r\n");
+}
+
+function downloadICS(slot: Date, meetLink: string | null) {
+  const blob = new Blob([buildICS(slot, meetLink)], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "outgrow-okay-discovery-call.ics";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function googleCalUrl(slot: Date, meetLink: string | null): string {
+  const end = new Date(slot.getTime() + 60 * 60 * 1000);
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: CAL_TITLE,
+    dates: `${toUTCStamp(slot)}/${toUTCStamp(end)}`,
+    details: meetLink ? `Join here: ${meetLink}` : "",
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 function slotOverlaps(slot: Date, events: CalEvent[]): boolean {
@@ -167,10 +234,15 @@ export function Book() {
 
   // ── Confirmation screen ───────────────────────────────────────────────────
   if (booking) {
+    // Gate the Meet link's presentation: it's only the live accent action within
+    // ~10 min of the start. Until then the useful action is "Add to calendar".
+    const minsUntil = (booking.slot.getTime() - Date.now()) / 60000;
+    const meetLive = minsUntil <= 10;
+
     return (
-      <div className="min-h-screen">
+      <div className="flex min-h-screen flex-col">
         {PageHeader}
-        <main className="px-5 py-10">
+        <main className="flex-1 px-5 py-10">
           <div className="mx-auto max-w-prose text-center">
             <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full border border-line">
               <Check size={24} strokeWidth={1.5} className="text-pos" aria-hidden />
@@ -180,35 +252,74 @@ export function Book() {
               Discovery call confirmed.
             </h1>
             <p className="num mt-5 text-md text-muted">
-              {formatConfirmDate(booking.slot)} at {formatSlotTime(booking.slot)}
+              {formatConfirmDate(booking.slot)} at {formatSlotTime(booking.slot)} (UK time)
             </p>
-            {booking.meetLink && (
-              <p className="mt-2 text-base text-faint">
-                A confirmation email with the Meet link is on its way.
-              </p>
-            )}
-            {booking.meetLink && (
+            <p className="mt-2 text-base text-faint">
+              You&rsquo;ll also get a calendar invitation by email.
+            </p>
+
+            {/* Primary action: add to calendar (the thing a just-booked person wants now) */}
+            <div className="mt-8 flex flex-col items-center gap-4">
+              <button
+                onClick={() => downloadICS(booking.slot, booking.meetLink)}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-6 py-4 font-heading font-bold text-base text-ink transition-transform duration-fast ease-out hover:brightness-105 motion-safe:active:scale-[0.97]"
+              >
+                <CalendarPlus size={16} strokeWidth={1.5} /> Add to calendar
+              </button>
               <a
-                href={booking.meetLink}
+                href={googleCalUrl(booking.slot, booking.meetLink)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-8 inline-flex items-center justify-center gap-2 rounded-md bg-accent px-6 py-4 font-heading font-bold text-base text-ink transition-transform duration-fast ease-out hover:brightness-105 motion-safe:active:scale-[0.97]"
+                className="text-base text-muted underline-offset-4 hover:text-content hover:underline transition-colors duration-fast"
               >
-                <Video size={16} strokeWidth={1.5} /> Join Google Meet
+                Add to Google Calendar instead
               </a>
-            )}
+            </div>
+
+            {/* Meet link: secondary/informational until shortly before the call */}
+            {booking.meetLink &&
+              (meetLive ? (
+                <a
+                  href={booking.meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-8 inline-flex items-center justify-center gap-2 rounded-md bg-accent px-6 py-4 font-heading font-bold text-base text-ink transition-transform duration-fast ease-out hover:brightness-105 motion-safe:active:scale-[0.97]"
+                >
+                  <Video size={16} strokeWidth={1.5} /> Join Google Meet
+                </a>
+              ) : (
+                <a
+                  href={booking.meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-8 inline-flex items-center justify-center gap-2 rounded-md border border-line px-6 py-3 text-base text-muted transition-colors duration-fast hover:text-content hover:border-faint"
+                >
+                  <Video size={16} strokeWidth={1.5} aria-hidden /> Meet link &mdash; active 10 minutes before
+                </a>
+              ))}
+
+            <div className="mt-10">
+              <Link
+                to="/"
+                className="inline-flex items-center gap-2 text-sm text-faint transition-colors duration-fast hover:text-content"
+              >
+                <ArrowLeft size={15} strokeWidth={1.5} aria-hidden />
+                Back to outgrowokay.com
+              </Link>
+            </div>
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
 
   // ── Main booking UI ───────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       {PageHeader}
 
-      <main className="px-5 py-9">
+      <main className="flex-1 px-5 py-9">
         <div className="mx-auto max-w-content">
           <p className="eyebrow text-muted">Free · no pitch</p>
           <h1 className="mt-4 font-heading font-black text-xl sm:text-2xl text-content">
@@ -362,7 +473,7 @@ export function Book() {
                     onChange={onChange}
                     rows={4}
                     disabled={!selected || submitting}
-                    placeholder="Tell us a bit about what&rsquo;s on your mind…"
+                    placeholder="Tell us a bit about what's on your mind…"
                     className={FIELD_CLASS + " min-h-[100px] resize-y"}
                   />
                 </div>
@@ -379,6 +490,7 @@ export function Book() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

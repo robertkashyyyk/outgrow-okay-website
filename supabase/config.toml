@@ -1,0 +1,12 @@
+# Outgrow Okay Supabase project (separate from Kashyyyk).
+# Link with: supabase link --project-ref isldzythfgmxvyfgveji
+project_id = "outgrow-okay"
+
+# Booking functions are called from the public site with the anon key as a Bearer
+# token (a valid JWT), so the default verify_jwt = true is fine — no public/no-auth
+# functions here.
+[functions.create-booking]
+verify_jwt = true
+
+[functions.list-calendar-events]
+verify_jwt = true

@@ -19,8 +19,8 @@ export function Hero() {
           <p className="mt-6 max-w-prose text-md text-muted">
             You built something that works. It&rsquo;s profitable, it&rsquo;s
             steady &mdash; and it&rsquo;s quietly stopped getting better. We find
-            the one thing holding it back, and we change it. Using your numbers,
-            not our opinions.
+            what&rsquo;s holding it back, and we change it. Based on your numbers,
+            not guesswork.
           </p>
         </Reveal>
         <Reveal delay={120}>

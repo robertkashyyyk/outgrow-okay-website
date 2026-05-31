@@ -36,7 +36,7 @@ export function WhoFor() {
               You&rsquo;re pre-revenue, you&rsquo;re in a genuine crisis
               (that&rsquo;s turnaround &mdash; a different job), you want a quick
               fix or a motivational hit, or you&rsquo;d rather not put your actual
-              numbers on the table.
+              numbers or processes on the table.
             </p>
           </div>
         </Reveal>
