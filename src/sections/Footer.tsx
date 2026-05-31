@@ -20,10 +20,10 @@ export function Footer() {
         </a>
         <span aria-hidden>·</span>
         <Link
-          to="/progress-log"
+          to="/insights"
           className="hover:text-content transition-colors duration-fast"
         >
-          Progress log
+          Insights
         </Link>
       </div>
     </footer>
