@@ -111,6 +111,102 @@
     text-transform: uppercase;
     color: var(--oo-text-muted);
   }
+
+  /* Long-form article body (Insights). Rendered from markdown via react-markdown.
+     Styled with tokens only — no new hexes. Accent stays reserved: links pick it up
+     on hover/focus, not as a default body colour. */
+  .oo-article {
+    color: var(--oo-text-muted);
+    font-size: 18px;
+    line-height: 1.7;
+  }
+  .oo-article > * + * {
+    margin-top: 1.4em;
+  }
+  .oo-article h2,
+  .oo-article h3,
+  .oo-article h4 {
+    font-family: var(--oo-font-heading);
+    color: var(--oo-text);
+    line-height: 1.25;
+  }
+  .oo-article h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-top: 1.8em;
+  }
+  .oo-article h3 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 1.6em;
+  }
+  .oo-article h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 1.4em;
+  }
+  .oo-article strong {
+    color: var(--oo-text);
+    font-weight: 600;
+  }
+  .oo-article a {
+    color: var(--oo-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--oo-border);
+    transition: color var(--oo-fast) var(--oo-ease-out);
+  }
+  .oo-article a:hover {
+    color: var(--oo-accent);
+  }
+  .oo-article ul,
+  .oo-article ol {
+    padding-left: 1.4em;
+  }
+  .oo-article li + li {
+    margin-top: 0.5em;
+  }
+  .oo-article ul > li {
+    list-style: disc;
+  }
+  .oo-article ol > li {
+    list-style: decimal;
+  }
+  .oo-article blockquote {
+    border-left: 2px solid var(--oo-accent);
+    padding-left: 1.1em;
+    color: var(--oo-text);
+    font-style: italic;
+  }
+  .oo-article code {
+    font-family: var(--oo-font-mono);
+    font-size: 0.9em;
+    background-color: var(--oo-surface);
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
+  }
+  .oo-article pre {
+    font-family: var(--oo-font-mono);
+    font-size: 0.85em;
+    background-color: var(--oo-surface);
+    border: 1px solid var(--oo-border);
+    border-radius: 4px;
+    padding: 1em 1.1em;
+    overflow-x: auto;
+  }
+  .oo-article pre code {
+    background: none;
+    padding: 0;
+  }
+  .oo-article hr {
+    border: none;
+    border-top: 1px solid var(--oo-border);
+  }
+  .oo-article img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+  }
 }
 
 /* Entrance: opacity + translateY only, gated behind reduced-motion */
