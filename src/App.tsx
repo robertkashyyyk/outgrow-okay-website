@@ -1,22 +1,60 @@
 import { Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./lib/auth";
+import { AuthGuard } from "./guards/AuthGuard";
 import { Home } from "./pages/Home";
 import { Book } from "./pages/Book";
 import { ProgressLog } from "./pages/ProgressLog";
 import { Insights } from "./pages/Insights";
 import { InsightPost } from "./pages/InsightPost";
 import { Privacy } from "./pages/Privacy";
+import { Login } from "./pages/Login";
+import { StudioLayout } from "./layouts/StudioLayout";
+import { PortalLayout } from "./layouts/PortalLayout";
+import { CommandCentre } from "./pages/studio/CommandCentre";
+import { PortalDashboard } from "./pages/portal/PortalDashboard";
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/book" element={<Book />} />
-      <Route path="/insights" element={<Insights />} />
-      <Route path="/insights/:slug" element={<InsightPost />} />
-      <Route path="/privacy" element={<Privacy />} />
-      {/* Internal build journal — intentionally not linked from the public nav. */}
-      <Route path="/progress-log" element={<ProgressLog />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Public marketing site */}
+        <Route path="/" element={<Home />} />
+        <Route path="/book" element={<Book />} />
+        <Route path="/insights" element={<Insights />} />
+        <Route path="/insights/:slug" element={<InsightPost />} />
+        <Route path="/privacy" element={<Privacy />} />
+
+        {/* One login for everyone; role decides the destination. */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Admin back office */}
+        <Route
+          path="/studio"
+          element={
+            <AuthGuard role="admin">
+              <StudioLayout />
+            </AuthGuard>
+          }
+        >
+          <Route index element={<CommandCentre />} />
+        </Route>
+
+        {/* Customer area */}
+        <Route
+          path="/portal"
+          element={
+            <AuthGuard role="customer">
+              <PortalLayout />
+            </AuthGuard>
+          }
+        >
+          <Route index element={<PortalDashboard />} />
+        </Route>
+
+        {/* Internal build journal — intentionally not linked from the public nav. */}
+        <Route path="/progress-log" element={<ProgressLog />} />
+      </Routes>
+    </AuthProvider>
   );
 }
 
