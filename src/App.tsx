@@ -13,7 +13,9 @@ import { Welcome } from "./pages/Welcome";
 import { StudioLayout } from "./layouts/StudioLayout";
 import { PortalLayout } from "./layouts/PortalLayout";
 import { CommandCentre } from "./pages/studio/CommandCentre";
-import { Clients } from "./pages/studio/Clients";
+import { ClientList } from "./pages/studio/clients/ClientList";
+import { ClientDetail } from "./pages/studio/clients/ClientDetail";
+import { ClientForm } from "./pages/studio/clients/ClientForm";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
@@ -50,7 +52,10 @@ function App() {
           <Route path="insights/engine" element={<ContentEngine />} />
           <Route path="insights/new" element={<InsightEditor />} />
           <Route path="insights/:id/edit" element={<InsightEditor />} />
-          <Route path="clients" element={<Clients />} />
+          <Route path="clients" element={<ClientList />} />
+          <Route path="clients/new" element={<ClientForm />} />
+          <Route path="clients/:id" element={<ClientDetail />} />
+          <Route path="clients/:id/edit" element={<ClientForm />} />
         </Route>
 
         {/* Customer area */}

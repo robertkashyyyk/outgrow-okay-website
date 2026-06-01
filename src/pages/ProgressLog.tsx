@@ -29,6 +29,12 @@ function StatusTag({ status }: { status: Status }) {
 
 const changelog: { date: string; items: string[] }[] = [
   {
+    date: "2026-06-01",
+    items: [
+      "Clients + Contacts — the lighter CRM foundation (Phase 3, part 1). Two new tables: clients (the company/account — status, industry, website, package, notes) and contacts (the people at that company — name, role, email, phone, with a primary flag). Both are admin-only behind is_admin() RLS; contacts cascade-delete with their client. In the Studio: a filterable client list, a client detail screen with a full contacts section (add / edit / remove inline, mark primary), and a new/edit client form. A client with no package or retainer is simply 'Ad hoc'; named packages map to the Find / Change / Move stages. Provisioning was folded in — the old standalone 'invite a client' page is gone, replaced by an 'Invite to Portal' action on each contact that reuses the existing provision-account function and links the contact to their Portal login. This is deliberately built before Tasks, because a task has to belong to a contact — contacts are the connective tissue everything else hangs off.",
+    ],
+  },
+  {
     date: "2026-05-31",
     items: [
       "Insights reading polish — three fixes. (1) Pages now always open at the top: React Router was keeping the previous page's scroll position, so a post could open near its footer and the long index opened halfway down; a ScrollToTop now resets on every route change and the browser's own scroll restoration is turned off. (2) The index is paginated (12 per page, Newer/Older controls) instead of rendering all 60+ articles in one endless scroll. (3) The cover image returns to the top of each article — sitting behind the title at low opacity and fading into the ink ground, the hero treatment carried over from the Kashyyyk version.",
