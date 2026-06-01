@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   FileText,
   Users,
+  ListChecks,
   FileSignature,
   Settings,
 } from "lucide-react";
@@ -13,6 +14,7 @@ const NAV: NavItem[] = [
   { to: "/studio", label: "Command Centre", icon: LayoutDashboard, end: true },
   { to: "/studio/insights", label: "Insights", icon: FileText },
   { to: "/studio/clients", label: "Clients", icon: Users },
+  { to: "/studio/tasks", label: "Tasks", icon: ListChecks },
   { to: "/studio/proposals", label: "Proposals", icon: FileSignature, soon: true },
   { to: "/studio/settings", label: "Settings", icon: Settings, soon: true },
 ];

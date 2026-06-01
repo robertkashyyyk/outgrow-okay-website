@@ -16,6 +16,7 @@ import { CommandCentre } from "./pages/studio/CommandCentre";
 import { ClientList } from "./pages/studio/clients/ClientList";
 import { ClientDetail } from "./pages/studio/clients/ClientDetail";
 import { ClientForm } from "./pages/studio/clients/ClientForm";
+import { TaskList } from "./pages/studio/tasks/TaskList";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
@@ -56,6 +57,7 @@ function App() {
           <Route path="clients/new" element={<ClientForm />} />
           <Route path="clients/:id" element={<ClientDetail />} />
           <Route path="clients/:id/edit" element={<ClientForm />} />
+          <Route path="tasks" element={<TaskList />} />
         </Route>
 
         {/* Customer area */}
