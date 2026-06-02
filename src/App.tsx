@@ -17,6 +17,7 @@ import { ClientList } from "./pages/studio/clients/ClientList";
 import { ClientDetail } from "./pages/studio/clients/ClientDetail";
 import { ClientForm } from "./pages/studio/clients/ClientForm";
 import { TaskList } from "./pages/studio/tasks/TaskList";
+import { SignalPage } from "./pages/studio/signal/SignalPage";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
@@ -58,6 +59,7 @@ function App() {
           <Route path="clients/:id" element={<ClientDetail />} />
           <Route path="clients/:id/edit" element={<ClientForm />} />
           <Route path="tasks" element={<TaskList />} />
+          <Route path="signal" element={<SignalPage />} />
         </Route>
 
         {/* Customer area */}
