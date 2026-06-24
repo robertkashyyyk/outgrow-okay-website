@@ -31,6 +31,7 @@ import {
   type Contact,
 } from "../../../types/client";
 import { ClientTasksPanel } from "../tasks/ClientTasksPanel";
+import { ClientProposalsPanel } from "../proposals/ClientProposalsPanel";
 
 const FIELD =
   "w-full bg-surface border border-line rounded-md px-3 py-2 text-sm " +
@@ -560,6 +561,9 @@ export function ClientDetail() {
           contacts={contacts.map((c) => ({ id: c.id, name: c.name }))}
         />
       )}
+
+      {/* Proposals */}
+      {id && <ClientProposalsPanel clientId={id} />}
     </div>
   );
 }
