@@ -750,7 +750,10 @@
   }
 
   function payClick(){
-    alert("This is where your live payment link goes (Stripe, GoCardless, etc.).\\n\\n£2,000 — Phase 0, credited in full against Phase 1.");
+    /* Ask the Outgrow Okay Portal (the parent window) to open secure checkout.
+       The amount is set on the proposal server-side. */
+    try { window.parent.postMessage({ type: "oo:checkout" }, "*"); }
+    catch (e) { /* not embedded — ignore */ }
     return false;
   }
 </script>

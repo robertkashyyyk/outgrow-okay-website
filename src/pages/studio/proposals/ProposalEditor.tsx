@@ -23,7 +23,11 @@ export interface ProposalFormValue {
   format: ProposalFormat;
   body: string;
   status: ProposalStatus;
+  amount_pence: number | null;
+  currency: string;
 }
+
+const CURRENCIES = ["gbp", "usd", "eur"];
 
 // Add/edit a proposal. The body is either markdown or a single self-contained HTML
 // document — the preview toggle renders it exactly as the customer will see it.
@@ -44,6 +48,11 @@ export function ProposalEditor({
   const [format, setFormat] = useState<ProposalFormat>(initial?.format ?? "markdown");
   const [body, setBody] = useState(initial?.body ?? "");
   const [status, setStatus] = useState<ProposalStatus>(initial?.status ?? "draft");
+  // Amount is held as a pounds string in the form; stored as integer pence.
+  const [amount, setAmount] = useState(
+    initial?.amount_pence != null ? (initial.amount_pence / 100).toString() : "",
+  );
+  const [currency, setCurrency] = useState(initial?.currency ?? "gbp");
   const [preview, setPreview] = useState(false);
 
   function onTitleChange(next: string) {
@@ -54,12 +63,17 @@ export function ProposalEditor({
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!title.trim() || !slug.trim() || !body.trim()) return;
+    const pounds = parseFloat(amount);
+    const amount_pence =
+      amount.trim() === "" || Number.isNaN(pounds) ? null : Math.round(pounds * 100);
     onSave({
       title: title.trim(),
       slug: slug.trim(),
       format,
       body,
       status,
+      amount_pence,
+      currency,
     });
   }
 
@@ -121,6 +135,36 @@ export function ProposalEditor({
             ))}
           </select>
         </div>
+        <div>
+          <label className={LABEL}>Amount</label>
+          <input
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            placeholder="e.g. 2000 (leave blank for none)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className={`${FIELD} num`}
+          />
+          <p className="mt-1 text-xs text-faint">
+            Sets the “Approve &amp; pay” button. Blank = no payment.
+          </p>
+        </div>
+        <div>
+          <label className={LABEL}>Currency</label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className={`${FIELD} uppercase`}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div>
@@ -154,6 +198,10 @@ export function ProposalEditor({
                   format,
                   body,
                   status,
+                  amount_pence: null,
+                  currency,
+                  paid_at: null,
+                  stripe_session_id: null,
                   first_viewed_at: null,
                   created_at: "",
                   updated_at: "",

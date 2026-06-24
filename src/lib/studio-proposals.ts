@@ -6,9 +6,9 @@ import { supabase } from "./supabase";
 import type { Proposal, ProposalDraft, ProposalSummary } from "../types/proposal";
 
 const PROPOSAL_COLS =
-  "id,client_id,title,slug,format,body,status,first_viewed_at,created_at,updated_at";
+  "id,client_id,title,slug,format,body,status,amount_pence,currency,paid_at,stripe_session_id,first_viewed_at,created_at,updated_at";
 const SUMMARY_COLS =
-  "id,client_id,title,slug,format,status,first_viewed_at,created_at,updated_at";
+  "id,client_id,title,slug,format,status,amount_pence,currency,paid_at,stripe_session_id,first_viewed_at,created_at,updated_at";
 
 // A summary plus the parent client's name, for the system-wide Proposals list.
 export type ProposalWithClient = ProposalSummary & { client_name: string };

@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Proposal } from "../types/proposal";
 
@@ -7,16 +8,22 @@ import type { Proposal } from "../types/proposal";
 //     allow-same-origin) runs the document's own scripts (e.g. its page nav) inside a
 //     unique opaque origin, so it CANNOT reach our Supabase session, cookies, or DOM.
 //     Self-contained documents (fonts over CDN, inline script/style) render fine.
+//
+// An optional `iframeRef` lets a parent identify postMessage events coming from this
+// iframe (used by the Portal to honour the proposal's "pay" button).
 export function ProposalBody({
   proposal,
   iframeClassName = "w-full h-[78vh] border border-line rounded-lg bg-paper",
+  iframeRef,
 }: {
   proposal: Proposal;
   iframeClassName?: string;
+  iframeRef?: Ref<HTMLIFrameElement>;
 }) {
   if (proposal.format === "html") {
     return (
       <iframe
+        ref={iframeRef}
         title={proposal.title}
         srcDoc={proposal.body}
         sandbox="allow-scripts"

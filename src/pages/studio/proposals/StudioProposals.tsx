@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Pencil, Trash2, ExternalLink, Eye, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Eye, CheckCircle2, Loader2 } from "lucide-react";
 import {
   listAllProposals,
   getProposal,
@@ -12,6 +12,7 @@ import {
 import { listClients } from "../../../lib/studio-clients";
 import {
   PROPOSAL_STATUS_LABEL,
+  formatMoney,
   type Proposal,
   type ProposalStatus,
 } from "../../../types/proposal";
@@ -312,10 +313,24 @@ function ProposalRow({
           </Link>
           <span className="num">/{proposal.slug}</span>
           <span>{formatDate(proposal.created_at)}</span>
+          {proposal.amount_pence != null && (
+            <span className="num">
+              {formatMoney(proposal.amount_pence, proposal.currency)}
+            </span>
+          )}
           {proposal.first_viewed_at && (
             <span className="inline-flex items-center gap-1" style={{ color: "var(--oo-pos)" }}>
               <Eye size={12} strokeWidth={1.5} aria-hidden />
               Opened
+            </span>
+          )}
+          {proposal.paid_at && (
+            <span
+              className="num inline-flex items-center gap-1 uppercase tracking-wide"
+              style={{ color: "var(--oo-pos)" }}
+            >
+              <CheckCircle2 size={12} strokeWidth={1.5} aria-hidden />
+              Paid
             </span>
           )}
         </div>
