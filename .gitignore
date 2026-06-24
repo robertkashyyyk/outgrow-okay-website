@@ -27,3 +27,6 @@ supabase/.temp
 *.njsproj
 *.sln
 *.sw?
+
+# local secrets / scratch (never commit)
+tmp/
