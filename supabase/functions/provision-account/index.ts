@@ -85,8 +85,8 @@ serve(async (req) => {
   function jwtRole(jwt: string): string | null {
     try {
       const payload = jwt.split('.')[1]
-      const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
-      return (JSON.parse(json) as { role?: string }).role ?? null
+      const j = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+      return (JSON.parse(j) as { role?: string }).role ?? null
     } catch {
       return null
     }
@@ -150,6 +150,46 @@ serve(async (req) => {
     const msg = linkError?.message ?? 'Could not generate invite link'
     // Most common cause: the email already has an account.
     const already = /already.*registered|already been registered|exists/i.test(msg)
+
+    // If the account already exists, ADOPT it: return the existing user's id so the
+    // caller can link the contact (contact.profile_id), and send a recovery link so
+    // they can sign in / (re)set a password. This stops a pre-existing login (e.g.
+    // someone who once booked a call) from blocking a Portal invite.
+    if (already) {
+      const { data: existingProfile } = await admin
+        .from('profiles')
+        .select('id')
+        .ilike('email', email)
+        .maybeSingle()
+
+      if (existingProfile?.id) {
+        let emailSent = false
+        const resendKey = Deno.env.get('RESEND_API_KEY')
+        const { data: rec } = await admin.auth.admin.generateLink({
+          type: 'recovery',
+          email,
+          options: { redirectTo: `${SITE_URL}/welcome` },
+        })
+        const recLink = rec?.properties?.action_link
+        if (resendKey && recLink) {
+          const firstName = fullName ? fullName.split(' ')[0] : 'there'
+          const r = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: FROM_INVITE,
+              to: [email],
+              subject: 'Sign in to Outgrow Okay',
+              html: inviteHtml(firstName, recLink),
+            }),
+          })
+          emailSent = r.ok
+          if (!r.ok) console.error('Resend recovery email failed:', r.status, await r.text())
+        }
+        return json({ success: true, user_id: existingProfile.id, existing: true, email_sent: emailSent })
+      }
+    }
+
     console.error('generateLink failed:', msg)
     return json(
       { error: already ? 'That email already has an account.' : msg },
