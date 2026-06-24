@@ -59,6 +59,18 @@ export async function getProposal(id: string): Promise<Proposal | null> {
   return (data as Proposal | null) ?? null;
 }
 
+// For the admin-side preview route. Admin RLS lets an admin read any proposal,
+// including drafts — so this previews exactly what the customer will get.
+export async function getProposalBySlug(slug: string): Promise<Proposal | null> {
+  const { data, error } = await supabase
+    .from("proposals")
+    .select(PROPOSAL_COLS)
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as Proposal | null) ?? null;
+}
+
 export async function createProposal(draft: ProposalDraft): Promise<Proposal> {
   const { data, error } = await supabase
     .from("proposals")

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Plus, Pencil, Trash2, ExternalLink, Eye, Loader2 } from "lucide-react";
 import {
   listClientProposals,
@@ -227,17 +228,13 @@ function ProposalRow({
       </div>
 
       <div className="flex items-center gap-1 shrink-0">
-        {proposal.status === "published" && (
-          <a
-            href={`/portal/proposals/${proposal.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            title="Open in Portal"
-            className="p-2 rounded text-muted hover:text-content transition-colors duration-fast"
-          >
-            <ExternalLink size={15} strokeWidth={1.5} aria-hidden />
-          </a>
-        )}
+        <Link
+          to={`/studio/proposals/${proposal.slug}`}
+          title="Preview (as the client sees it)"
+          className="p-2 rounded text-muted hover:text-content transition-colors duration-fast"
+        >
+          <ExternalLink size={15} strokeWidth={1.5} aria-hidden />
+        </Link>
         <button
           onClick={onEdit}
           disabled={busy}

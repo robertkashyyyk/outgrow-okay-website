@@ -19,6 +19,7 @@ import { ClientForm } from "./pages/studio/clients/ClientForm";
 import { TaskList } from "./pages/studio/tasks/TaskList";
 import { SignalPage } from "./pages/studio/signal/SignalPage";
 import { StudioProposals } from "./pages/studio/proposals/StudioProposals";
+import { StudioProposalPreview } from "./pages/studio/proposals/StudioProposalPreview";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
@@ -64,6 +65,7 @@ function App() {
           <Route path="tasks" element={<TaskList />} />
           <Route path="signal" element={<SignalPage />} />
           <Route path="proposals" element={<StudioProposals />} />
+          <Route path="proposals/:slug" element={<StudioProposalPreview />} />
         </Route>
 
         {/* Customer area */}
