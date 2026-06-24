@@ -10,6 +10,31 @@ const PROPOSAL_COLS =
 const SUMMARY_COLS =
   "id,client_id,title,slug,format,status,first_viewed_at,created_at,updated_at";
 
+// A summary plus the parent client's name, for the system-wide Proposals list.
+export type ProposalWithClient = ProposalSummary & { client_name: string };
+
+// PostgREST may surface an embedded to-one relation as an object or a single-element
+// array depending on how it infers the FK; handle both.
+type Embed<T> = T | T[] | null;
+function one<T>(e: Embed<T>): T | null {
+  if (!e) return null;
+  return Array.isArray(e) ? (e[0] ?? null) : e;
+}
+
+// Every proposal in the system, newest first, each labelled with its client.
+export async function listAllProposals(): Promise<ProposalWithClient[]> {
+  const { data, error } = await supabase
+    .from("proposals")
+    .select(`${SUMMARY_COLS}, clients(company_name)`)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  type Row = ProposalSummary & { clients?: Embed<{ company_name: string }> };
+  return ((data as unknown as Row[] | null) ?? []).map((row) => {
+    const { clients, ...rest } = row;
+    return { ...rest, client_name: one(clients)?.company_name ?? "—" };
+  });
+}
+
 // Proposals for one client (the Studio client-detail panel). Summaries only — the
 // body can be large, and the list doesn't need it.
 export async function listClientProposals(

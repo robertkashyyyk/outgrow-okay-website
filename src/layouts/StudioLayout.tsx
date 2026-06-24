@@ -17,7 +17,7 @@ const NAV: NavItem[] = [
   { to: "/studio/clients", label: "Clients", icon: Users },
   { to: "/studio/tasks", label: "Tasks", icon: ListChecks },
   { to: "/studio/signal", label: "Signal", icon: Radio },
-  { to: "/studio/proposals", label: "Proposals", icon: FileSignature, soon: true },
+  { to: "/studio/proposals", label: "Proposals", icon: FileSignature },
   { to: "/studio/settings", label: "Settings", icon: Settings, soon: true },
 ];
 
