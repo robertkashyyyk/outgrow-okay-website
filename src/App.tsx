@@ -26,6 +26,7 @@ import { ContentEngine } from "./pages/studio/insights/ContentEngine";
 import { PortalDashboard } from "./pages/portal/PortalDashboard";
 import { PortalProposals } from "./pages/portal/PortalProposals";
 import { PortalProposalView } from "./pages/portal/PortalProposalView";
+import { PortalAccount } from "./pages/portal/PortalAccount";
 
 function App() {
   return (
@@ -80,6 +81,7 @@ function App() {
           <Route index element={<PortalDashboard />} />
           <Route path="proposals" element={<PortalProposals />} />
           <Route path="proposals/:slug" element={<PortalProposalView />} />
+          <Route path="account" element={<PortalAccount />} />
         </Route>
 
         {/* Internal build journal — intentionally not linked from the public nav. */}
