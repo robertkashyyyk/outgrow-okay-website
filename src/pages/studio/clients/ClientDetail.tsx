@@ -11,6 +11,7 @@ import {
   Phone,
   Send,
   Check,
+  Link2,
   Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -23,6 +24,7 @@ import {
   deleteContact,
   setPrimaryContact,
   inviteContactToPortal,
+  getPortalSigninLink,
 } from "../../../lib/studio-clients";
 import {
   CLIENT_STATUS_LABEL,
@@ -131,6 +133,8 @@ function ContactRow({
   onEdit,
   onDelete,
   onInvite,
+  onCopyLink,
+  copied,
   busy,
 }: {
   contact: Contact;
@@ -138,6 +142,8 @@ function ContactRow({
   onEdit: () => void;
   onDelete: () => void;
   onInvite: () => void;
+  onCopyLink: () => void;
+  copied: boolean;
   busy: boolean;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -188,6 +194,20 @@ function ContactRow({
             className="p-2 rounded text-muted hover:text-content transition-colors duration-fast disabled:opacity-50"
           >
             <Star size={15} strokeWidth={1.5} aria-hidden />
+          </button>
+        )}
+        {contact.email && (
+          <button
+            onClick={onCopyLink}
+            disabled={busy}
+            title="Copy a one-time Portal sign-in link (no email)"
+            className="p-2 rounded text-muted hover:text-content transition-colors duration-fast disabled:opacity-50"
+          >
+            {copied ? (
+              <Check size={15} strokeWidth={2} aria-hidden style={{ color: "var(--oo-pos)" }} />
+            ) : (
+              <Link2 size={15} strokeWidth={1.5} aria-hidden />
+            )}
           </button>
         )}
         {!contact.profile_id && contact.email && (
@@ -246,10 +266,12 @@ export function ClientDetail() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "notfound">("loading");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null); // contact id (or "new") being mutated
+  const [copiedId, setCopiedId] = useState<string | null>(null); // contact whose link was just copied
   const [confirmDeleteClient, setConfirmDeleteClient] = useState(false);
 
   useEffect(() => {
@@ -344,6 +366,59 @@ export function ClientDetail() {
     try {
       await action();
       await refreshContacts();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Invite (or link) a contact to the Portal, then surface whether the email actually
+  // went out — a silent send failure is otherwise invisible.
+  async function onInvite(contact: Contact) {
+    setBusyId(contact.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await inviteContactToPortal(contact);
+      await refreshContacts();
+      if (res.emailSent) {
+        setNotice(
+          res.existing
+            ? `${contact.email} already had an account — linked it and emailed a sign-in link.`
+            : `Invite emailed to ${contact.email}.`,
+        );
+      } else {
+        setError(
+          `Account ${res.existing ? "linked" : "created"}, but the email didn't send. Use “Copy sign-in link” to send it to them yourself.`,
+        );
+      }
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Copy a one-time Portal sign-in link to the clipboard (no email) so the admin can
+  // deliver it manually — the reliable fallback when automated delivery fails.
+  async function onCopyLink(contact: Contact) {
+    if (!contact.email) return;
+    setBusyId(contact.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await getPortalSigninLink(contact.email);
+      // If this contact isn't linked to the account yet, link it now so they'll see
+      // their proposals once they sign in.
+      if (!contact.profile_id && res.userId) {
+        await updateContact(contact.id, { profile_id: res.userId });
+        await refreshContacts();
+      }
+      await navigator.clipboard.writeText(res.actionLink);
+      setCopiedId(contact.id);
+      window.setTimeout(() => setCopiedId(null), 2000);
+      setNotice(`Sign-in link copied — send it to ${contact.email}.`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -479,6 +554,11 @@ export function ClientDetail() {
           {error}
         </p>
       )}
+      {notice && (
+        <p className="mt-5 text-sm" style={{ color: "var(--oo-pos)" }}>
+          {notice}
+        </p>
+      )}
 
       {/* Contacts */}
       <div className="mt-9">
@@ -532,6 +612,7 @@ export function ClientDetail() {
                   key={contact.id}
                   contact={contact}
                   busy={busyId === contact.id}
+                  copied={copiedId === contact.id}
                   onMakePrimary={() =>
                     onContactAction(contact.id, () =>
                       setPrimaryContact(contact.client_id, contact.id),
@@ -544,9 +625,8 @@ export function ClientDetail() {
                   onDelete={() =>
                     onContactAction(contact.id, () => deleteContact(contact.id))
                   }
-                  onInvite={() =>
-                    onContactAction(contact.id, () => inviteContactToPortal(contact))
-                  }
+                  onInvite={() => onInvite(contact)}
+                  onCopyLink={() => onCopyLink(contact)}
                 />
               ),
             )}

@@ -150,7 +150,15 @@ export async function setPrimaryContact(
  * contact as profile_id. The function re-checks admin server-side. Requires the
  * contact to have an email.
  */
-export async function inviteContactToPortal(contact: Contact): Promise<Contact> {
+export interface InviteResult {
+  contact: Contact;
+  /** Whether the branded invite/recovery email actually went out via Resend. */
+  emailSent: boolean;
+  /** True when the email already had an account and we linked it (vs created new). */
+  existing: boolean;
+}
+
+export async function inviteContactToPortal(contact: Contact): Promise<InviteResult> {
   if (!contact.email) throw new Error("This contact has no email to invite.");
   const { data, error } = await supabase.functions.invoke("provision-account", {
     body: {
@@ -160,10 +168,52 @@ export async function inviteContactToPortal(contact: Contact): Promise<Contact> 
     },
   });
   if (error) throw new Error(await readInvokeError(error));
-  const body = data as { user_id?: string; error?: string };
+  const body = data as {
+    user_id?: string;
+    error?: string;
+    email_sent?: boolean;
+    existing?: boolean;
+  };
   if (body?.error) throw new Error(body.error);
   if (!body?.user_id) throw new Error("Invite succeeded but no user id returned.");
-  return updateContact(contact.id, { profile_id: body.user_id });
+  const updated = await updateContact(contact.id, { profile_id: body.user_id });
+  return {
+    contact: updated,
+    emailSent: Boolean(body.email_sent),
+    existing: Boolean(body.existing),
+  };
+}
+
+export interface SigninLink {
+  actionLink: string;
+  userId: string | null;
+  existing: boolean;
+}
+
+/**
+ * Generate a one-time Portal sign-in link for a contact WITHOUT sending an email —
+ * for the admin to copy and deliver manually (Slack, their own email, etc.). Useful
+ * when automated delivery is failing or you just want a link in hand. Also returns the
+ * account's user id so the caller can link the contact if it isn't already.
+ */
+export async function getPortalSigninLink(email: string): Promise<SigninLink> {
+  const { data, error } = await supabase.functions.invoke("portal-signin-link", {
+    body: { email: email.trim() },
+  });
+  if (error) throw new Error(await readInvokeError(error));
+  const body = data as {
+    action_link?: string;
+    user_id?: string;
+    existing?: boolean;
+    error?: string;
+  };
+  if (body?.error) throw new Error(body.error);
+  if (!body?.action_link) throw new Error("No sign-in link was returned.");
+  return {
+    actionLink: body.action_link,
+    userId: body.user_id ?? null,
+    existing: Boolean(body.existing),
+  };
 }
 
 // functions.invoke wraps non-2xx responses in a FunctionsHttpError whose JSON body
