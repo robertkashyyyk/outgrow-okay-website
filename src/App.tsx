@@ -8,6 +8,8 @@ import { ProgressLog } from "./pages/ProgressLog";
 import { Insights } from "./pages/Insights";
 import { InsightPost } from "./pages/InsightPost";
 import { Privacy } from "./pages/Privacy";
+import { Review } from "./pages/Review";
+import { ReviewReturn } from "./pages/ReviewReturn";
 import { Login } from "./pages/Login";
 import { Welcome } from "./pages/Welcome";
 import { StudioLayout } from "./layouts/StudioLayout";
@@ -20,6 +22,8 @@ import { TaskList } from "./pages/studio/tasks/TaskList";
 import { SignalPage } from "./pages/studio/signal/SignalPage";
 import { StudioProposals } from "./pages/studio/proposals/StudioProposals";
 import { StudioProposalPreview } from "./pages/studio/proposals/StudioProposalPreview";
+import { ReportFunnelList } from "./pages/studio/report-funnel/ReportFunnelList";
+import { ReportFunnelDetail } from "./pages/studio/report-funnel/ReportFunnelDetail";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
@@ -39,6 +43,8 @@ function App() {
         <Route path="/insights" element={<Insights />} />
         <Route path="/insights/:slug" element={<InsightPost />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/review" element={<Review />} />
+        <Route path="/review/return" element={<ReviewReturn />} />
 
         {/* One login for everyone; role decides the destination. */}
         <Route path="/login" element={<Login />} />
@@ -67,6 +73,8 @@ function App() {
           <Route path="signal" element={<SignalPage />} />
           <Route path="proposals" element={<StudioProposals />} />
           <Route path="proposals/:slug" element={<StudioProposalPreview />} />
+          <Route path="report-funnel" element={<ReportFunnelList />} />
+          <Route path="report-funnel/:id" element={<ReportFunnelDetail />} />
         </Route>
 
         {/* Customer area */}
