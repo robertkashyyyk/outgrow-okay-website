@@ -6,6 +6,7 @@ import {
   Radio,
   FileSignature,
   Inbox,
+  Globe,
   Settings,
 } from "lucide-react";
 import { AppShell, type NavItem } from "./AppShell";
@@ -20,6 +21,7 @@ const NAV: NavItem[] = [
   { to: "/studio/signal", label: "Signal", icon: Radio },
   { to: "/studio/proposals", label: "Proposals", icon: FileSignature },
   { to: "/studio/report-funnel", label: "Report Funnel", icon: Inbox },
+  { to: "/studio/site-review", label: "Website Review", icon: Globe },
   { to: "/studio/settings", label: "Settings", icon: Settings, soon: true },
 ];
 

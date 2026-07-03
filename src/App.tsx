@@ -24,6 +24,8 @@ import { StudioProposals } from "./pages/studio/proposals/StudioProposals";
 import { StudioProposalPreview } from "./pages/studio/proposals/StudioProposalPreview";
 import { ReportFunnelList } from "./pages/studio/report-funnel/ReportFunnelList";
 import { ReportFunnelDetail } from "./pages/studio/report-funnel/ReportFunnelDetail";
+import { SiteReviewPage } from "./pages/studio/site-review/SiteReviewPage";
+import { SiteReviewDetail } from "./pages/studio/site-review/SiteReviewDetail";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
@@ -75,6 +77,8 @@ function App() {
           <Route path="proposals/:slug" element={<StudioProposalPreview />} />
           <Route path="report-funnel" element={<ReportFunnelList />} />
           <Route path="report-funnel/:id" element={<ReportFunnelDetail />} />
+          <Route path="site-review" element={<SiteReviewPage />} />
+          <Route path="site-review/:id" element={<SiteReviewDetail />} />
         </Route>
 
         {/* Customer area */}
