@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Mail, Trash2, Globe } from "lucide-react";
 import { getReview, deleteReview } from "../../../lib/studio-site-reviews";
-import { downloadReviewHtml } from "../../../content/siteReviewHtml";
+import { downloadReviewHtml, printReviewPdf } from "../../../content/siteReviewHtml";
 import { SiteReviewReport } from "../../../components/SiteReviewReport";
 import type { SiteReview } from "../../../types/site-review";
 
@@ -119,11 +119,17 @@ export function SiteReviewDetail() {
       {/* Send actions */}
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <button
-          onClick={() => downloadReviewHtml(review)}
+          onClick={() => printReviewPdf(review)}
           className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-heading font-bold text-sm text-ink rounded-md hover:brightness-105"
         >
           <Download size={15} strokeWidth={2} aria-hidden />
-          Download report
+          Download PDF
+        </button>
+        <button
+          onClick={() => downloadReviewHtml(review)}
+          className="inline-flex items-center gap-2 border border-line rounded-md px-3 py-2 text-sm text-muted hover:text-content hover:border-content transition-colors duration-fast"
+        >
+          HTML
         </button>
         {mailto && (
           <a href={mailto} className="inline-flex items-center gap-2 border border-line rounded-md px-4 py-2 text-sm text-muted hover:text-content hover:border-content transition-colors duration-fast">
@@ -133,8 +139,10 @@ export function SiteReviewDetail() {
         )}
       </div>
       <p className="mt-2 text-xs text-faint max-w-prose">
-        Download the report, then attach it to the email — it&rsquo;s a self-contained page
-        they can open in any browser.
+        <span className="text-muted">Download PDF</span> opens the report in a new tab and
+        brings up the print dialog — choose <span className="text-muted">Save as PDF</span>,
+        then attach it to your email. <span className="text-muted">HTML</span> is the raw page
+        if you&rsquo;d rather.
       </p>
 
       {error && <p className="mt-5 text-sm" style={{ color: "var(--oo-neg)" }}>{error}</p>}

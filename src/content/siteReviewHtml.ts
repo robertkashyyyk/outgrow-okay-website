@@ -62,7 +62,8 @@ export function buildReviewHtml(review: SiteReview): string {
 
   return `<!doctype html>
 <html lang="en-GB"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Digital presence review — ${name}</title></head>
+<title>Digital presence review — ${name}</title>
+<style>@page{margin:15mm;}html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}</style></head>
 <body style="margin:0;background:${BONE};font-family:Helvetica,Arial,sans-serif;color:${INK};">
   <div style="max-width:760px;margin:0 auto;padding:40px 28px;">
     <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${ACCENT};font-weight:700;">Digital presence review</div>
@@ -110,4 +111,16 @@ export function downloadReviewHtml(review: SiteReview): void {
   a.download = `digital-review-${slug}.html`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// Open the branded report in a new window and fire the browser's print dialog once the
+// screenshot has loaded — the user chooses "Save as PDF". Crisp, dependency-free.
+export function printReviewPdf(review: SiteReview): void {
+  const autoPrint = `<script>window.addEventListener('load',function(){var imgs=document.images,total=imgs.length,done=0;function go(){window.focus();window.print();}if(!total)return go();for(var i=0;i<total;i++){if(imgs[i].complete){if(++done>=total)go();}else{imgs[i].onload=imgs[i].onerror=function(){if(++done>=total)go();};}}});</scr` + `ipt>`;
+  const html = buildReviewHtml(review).replace("</body>", `${autoPrint}</body>`);
+  const w = window.open("", "_blank");
+  if (!w) return; // popup blocked — fall back handled by the caller if needed
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
 }
