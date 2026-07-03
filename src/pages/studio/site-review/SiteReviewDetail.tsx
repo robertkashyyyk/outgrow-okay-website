@@ -142,7 +142,12 @@ export function SiteReviewDetail() {
       {/* The review */}
       <div className="mt-8">
         {review.report ? (
-          <SiteReviewReport report={review.report} websiteUrl={review.website_url} />
+          <SiteReviewReport
+            report={review.report}
+            signals={review.signals}
+            screenshotUrl={review.screenshot_url}
+            websiteUrl={review.website_url}
+          />
         ) : (
           <p className="text-sm text-muted">
             {review.status === "failed"
