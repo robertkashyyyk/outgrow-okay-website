@@ -9,6 +9,17 @@ const SUMMARY_COLS =
 const FULL_COLS =
   "id,created_at,name,email,return_token,utm_source,utm_medium,utm_campaign,status,report_text,submitted_at,read_notes,read_sent_at";
 
+// Admin-initiated send: create a lead + fire the (warmer, "invite"-toned) kit email to
+// a specific person, straight from the Studio. Reuses the public capture function.
+export async function sendReviewKit(name: string, email: string): Promise<void> {
+  const { data, error } = await supabase.functions.invoke("report-funnel-capture", {
+    body: { name: name.trim(), email: email.trim(), origin: "invite" },
+  });
+  if (error) throw new Error(error.message);
+  const body = data as { error?: string } | null;
+  if (body?.error) throw new Error(body.error);
+}
+
 export async function listLeads(): Promise<ReportLeadSummary[]> {
   const { data, error } = await supabase
     .from("report_leads")

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { Mail, ArrowRight, Eye } from "lucide-react";
-import { listLeads } from "../../../lib/studio-report-funnel";
+import { Mail, ArrowRight, Eye, Send, Loader2 } from "lucide-react";
+import { listLeads, sendReviewKit } from "../../../lib/studio-report-funnel";
 import {
   REPORT_LEAD_STATUS_LABEL,
   type ReportLeadStatus,
@@ -34,7 +34,13 @@ function formatDate(iso: string | null): string {
 export function ReportFunnelList() {
   const [leads, setLeads] = useState<ReportLeadSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("awaiting");
+
+  const [sending, setSending] = useState(false);
+  const [sendName, setSendName] = useState("");
+  const [sendEmail, setSendEmail] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -50,6 +56,27 @@ export function ReportFunnelList() {
       active = false;
     };
   }, []);
+
+  async function onSend(e: FormEvent) {
+    e.preventDefault();
+    if (!sendName.trim() || !sendEmail.trim()) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await sendReviewKit(sendName, sendEmail);
+      setLeads(await listLeads());
+      setNotice(`Kit sent to ${sendEmail.trim()}.`);
+      setSendName("");
+      setSendEmail("");
+      setSending(false);
+      setFilter("captured");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const counts = useMemo(() => {
     const l = leads ?? [];
@@ -71,14 +98,76 @@ export function ReportFunnelList() {
 
   return (
     <div className="max-w-content">
-      <p className="eyebrow">Studio</p>
-      <h1 className="mt-4 font-heading font-black text-xl sm:text-2xl text-content">
-        Report Funnel
-      </h1>
-      <p className="mt-2 text-sm text-muted max-w-prose">
-        Prospects who ran the operational-review exercise. Read the ones awaiting a read,
-        write your take, and mark it sent when you&rsquo;ve emailed it.
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="eyebrow">Studio</p>
+          <h1 className="mt-4 font-heading font-black text-xl sm:text-2xl text-content">
+            Report Funnel
+          </h1>
+          <p className="mt-2 text-sm text-muted max-w-prose">
+            Prospects who ran the operational-review exercise — from the public{" "}
+            <span className="num">/review</span> page or sent from here. Read the ones
+            awaiting a read, write your take, and mark it sent when you&rsquo;ve emailed it.
+          </p>
+        </div>
+        {!sending && (
+          <button
+            onClick={() => {
+              setSending(true);
+              setNotice(null);
+            }}
+            className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-heading font-bold text-sm text-ink rounded-md transition-transform duration-fast ease-out motion-safe:active:scale-[0.97] hover:brightness-105 shrink-0"
+          >
+            <Send size={15} strokeWidth={2} aria-hidden />
+            Send the review kit
+          </button>
+        )}
+      </div>
+
+      {sending && (
+        <form
+          onSubmit={onSend}
+          className="mt-5 rounded-lg border border-line bg-surface p-4"
+        >
+          <p className="text-sm text-content mb-3">
+            Send the kit straight to someone — they&rsquo;ll get the warm invite email with
+            their prompts and personal return link, and land here as a new lead.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              placeholder="Their name"
+              value={sendName}
+              onChange={(e) => setSendName(e.target.value)}
+              className="w-full bg-ground border border-line rounded-md px-3 py-2 text-sm text-content placeholder:text-faint focus:border-accent"
+              autoFocus
+            />
+            <input
+              type="email"
+              placeholder="Their email"
+              value={sendEmail}
+              onChange={(e) => setSendEmail(e.target.value)}
+              className="w-full bg-ground border border-line rounded-md px-3 py-2 text-sm text-content placeholder:text-faint focus:border-accent"
+            />
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="submit"
+              disabled={busy || !sendName.trim() || !sendEmail.trim()}
+              className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-heading font-bold text-sm text-ink rounded-md hover:brightness-105 disabled:opacity-60"
+            >
+              {busy && <Loader2 size={14} className="motion-safe:animate-spin" aria-hidden />}
+              Send kit
+            </button>
+            <button
+              type="button"
+              onClick={() => setSending(false)}
+              className="num text-xs uppercase tracking-wide px-3 py-2 text-faint hover:text-content"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="mt-7 flex flex-wrap gap-1 border-b border-line">
         {FILTERS.map((f) => (
@@ -101,6 +190,11 @@ export function ReportFunnelList() {
       {error && (
         <p className="mt-5 text-sm" style={{ color: "var(--oo-neg)" }}>
           {error}
+        </p>
+      )}
+      {notice && (
+        <p className="mt-5 text-sm" style={{ color: "var(--oo-pos)" }}>
+          {notice}
         </p>
       )}
 

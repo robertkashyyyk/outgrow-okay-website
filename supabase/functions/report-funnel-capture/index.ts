@@ -38,7 +38,7 @@ const STEPS = [
   'Come back via your personal link and paste it in — I’ll send you an honest read on where to focus first.',
 ]
 
-function confirmationHtml(firstName: string, returnUrl: string): string {
+function confirmationHtml(firstName: string, returnUrl: string, intro: string): string {
   const steps = STEPS.map(
     (s, i) =>
       `<tr><td style="padding:0 10px 10px 0;vertical-align:top;font-family:'IBM Plex Mono',monospace;color:${ACCENT};font-weight:700;">${i + 1}</td><td style="padding:0 0 10px;font-size:15px;line-height:1.55;">${s}</td></tr>`,
@@ -47,7 +47,7 @@ function confirmationHtml(firstName: string, returnUrl: string): string {
     <div style="font-family:'IBM Plex Sans',Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;background:${BONE};color:${INK};padding:40px 36px;border-radius:12px;">
       <p style="font-family:'IBM Plex Mono','Courier New',monospace;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:${ACCENT};margin:0 0 20px;">Your operational review</p>
       <p style="font-size:16px;line-height:1.6;margin:0 0 18px;">Hi ${firstName},</p>
-      <p style="font-size:16px;line-height:1.6;margin:0 0 22px;">Thanks. Here’s the 20-minute exercise that maps where time and money leak in your business — you run it in your own AI and keep the report. Then send it back and I’ll give you an honest read on where I’d focus first.</p>
+      <p style="font-size:16px;line-height:1.6;margin:0 0 22px;">${intro}</p>
       <table style="border-collapse:collapse;margin:0 0 26px;">${steps}</table>
       <a href="${returnUrl}" style="display:inline-block;background:${ACCENT};color:${INK};padding:14px 28px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:24px;">Open your report kit &rarr;</a>
       <p style="font-size:14px;line-height:1.65;color:${GREY_500};margin:0 0 16px;">That link is yours — it has your two prompts, and it’s where you paste the finished report when it’s ready. No rush; it’ll keep.</p>
@@ -66,6 +66,7 @@ serve(async (req) => {
     let payload: {
       name?: string
       email?: string
+      origin?: string
       utm_source?: string
       utm_medium?: string
       utm_campaign?: string
@@ -89,13 +90,26 @@ serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     })
 
+    // origin 'invite' = an admin sent it from the Studio to a specific person, so the
+    // email reads as a warm offer (not "thanks for signing up") and tags the lead.
+    const origin = payload.origin === 'invite' ? 'invite' : 'gate'
+    const intro =
+      origin === 'invite'
+        ? 'I’d like to offer you something genuinely useful — and free. It’s a short exercise that maps where time and money leak in your business: you run it in your own AI, keep the report, then send it back and I’ll give you an honest read on where I’d focus first. No pitch, no catch.'
+        : 'Thanks. Here’s the 20-minute exercise that maps where time and money leak in your business — you run it in your own AI and keep the report. Then send it back and I’ll give you an honest read on where I’d focus first.'
+    const subject =
+      origin === 'invite'
+        ? 'A free operational review — where your business leaks time & money'
+        : 'Your operational review — start here'
+    const utmSource = payload.utm_source ?? (origin === 'invite' ? 'studio' : null)
+
     const returnToken = crypto.randomUUID().replace(/-/g, '')
 
     const { error: insErr } = await supabase.from('report_leads').insert({
       name,
       email,
       return_token: returnToken,
-      utm_source: payload.utm_source ?? null,
+      utm_source: utmSource,
       utm_medium: payload.utm_medium ?? null,
       utm_campaign: payload.utm_campaign ?? null,
       status: 'captured',
@@ -114,8 +128,8 @@ serve(async (req) => {
         body: JSON.stringify({
           from: FROM,
           to: [email],
-          subject: 'Your operational review — start here',
-          html: confirmationHtml(firstName, returnUrl),
+          subject,
+          html: confirmationHtml(firstName, returnUrl, intro),
         }),
       })
       if (!r.ok) console.error('Resend confirmation failed:', r.status, await r.text())
