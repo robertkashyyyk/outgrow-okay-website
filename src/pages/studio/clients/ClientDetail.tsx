@@ -12,6 +12,7 @@ import {
   Send,
   Check,
   Link2,
+  FileSearch,
   Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +27,7 @@ import {
   inviteContactToPortal,
   getPortalSigninLink,
 } from "../../../lib/studio-clients";
+import { sendReviewKit } from "../../../lib/studio-report-funnel";
 import {
   CLIENT_STATUS_LABEL,
   packageLabel,
@@ -134,6 +136,7 @@ function ContactRow({
   onDelete,
   onInvite,
   onCopyLink,
+  onSendKit,
   copied,
   busy,
 }: {
@@ -143,6 +146,7 @@ function ContactRow({
   onDelete: () => void;
   onInvite: () => void;
   onCopyLink: () => void;
+  onSendKit: () => void;
   copied: boolean;
   busy: boolean;
 }) {
@@ -194,6 +198,16 @@ function ContactRow({
             className="p-2 rounded text-muted hover:text-content transition-colors duration-fast disabled:opacity-50"
           >
             <Star size={15} strokeWidth={1.5} aria-hidden />
+          </button>
+        )}
+        {contact.email && (
+          <button
+            onClick={onSendKit}
+            disabled={busy}
+            title="Send the operational-review kit"
+            className="p-2 rounded text-muted hover:text-content transition-colors duration-fast disabled:opacity-50"
+          >
+            <FileSearch size={15} strokeWidth={1.5} aria-hidden />
           </button>
         )}
         {contact.email && (
@@ -426,6 +440,22 @@ export function ClientDetail() {
     }
   }
 
+  // Fire the operational-review kit to this contact (they land in the Report Funnel).
+  async function onSendKit(contact: Contact) {
+    if (!contact.email) return;
+    setBusyId(contact.id);
+    setError(null);
+    setNotice(null);
+    try {
+      await sendReviewKit(contact.name?.trim() || contact.email.split("@")[0], contact.email);
+      setNotice(`Review kit sent to ${contact.email} — they're now in the Report Funnel.`);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function onDeleteClient() {
     if (!id) return;
     try {
@@ -627,6 +657,7 @@ export function ClientDetail() {
                   }
                   onInvite={() => onInvite(contact)}
                   onCopyLink={() => onCopyLink(contact)}
+                  onSendKit={() => onSendKit(contact)}
                 />
               ),
             )}
