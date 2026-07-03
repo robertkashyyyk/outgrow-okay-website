@@ -76,8 +76,10 @@ export function Review() {
                 </h1>
                 <p className="mt-5 text-md text-muted leading-relaxed">
                   A short, structured exercise you run in your own AI — whichever one you
-                  already use. It interviews you about how the business really runs, then
-                  writes you a clear operational review. <span className="text-content">You keep the report.</span>
+                  already use. It interviews you about how things really run day to day —
+                  whether you own the whole business, run one part of it, or work for
+                  yourself — then writes you a clear operational review.{" "}
+                  <span className="text-content">You keep the report.</span>
                 </p>
                 <p className="mt-4 text-md text-muted leading-relaxed">
                   Send it back and I&rsquo;ll read it properly and come back with an honest
