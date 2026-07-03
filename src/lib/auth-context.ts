@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 import type { Session } from "@supabase/supabase-js";
 
-export type Role = "admin" | "customer";
+export type Role = "admin" | "customer" | "partner";
 
 export interface Profile {
   id: string;
@@ -29,7 +29,8 @@ export function useAuth(): AuthValue {
   return ctx;
 }
 
-/** Where a given role belongs. */
+/** Where a given role belongs. Admins and partners use the Studio (partners walled
+ * to just the Website Review tool by StudioLayout); customers use the Portal. */
 export function homeFor(role: Role | undefined): string {
-  return role === "admin" ? "/studio" : "/portal";
+  return role === "admin" || role === "partner" ? "/studio" : "/portal";
 }

@@ -57,7 +57,7 @@ function App() {
         <Route
           path="/studio"
           element={
-            <AuthGuard role="admin">
+            <AuthGuard roles={["admin", "partner"]}>
               <StudioLayout />
             </AuthGuard>
           }

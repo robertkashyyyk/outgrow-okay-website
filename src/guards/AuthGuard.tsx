@@ -31,9 +31,12 @@ function Spinner() {
  */
 export function AuthGuard({
   role,
+  roles,
   children,
 }: {
   role?: Role;
+  /** Allow any of these roles (e.g. Studio = admin + partner). */
+  roles?: Role[];
   children: ReactNode;
 }) {
   const { session, profile, loading, signOut } = useAuth();
@@ -68,7 +71,8 @@ export function AuthGuard({
     );
   }
 
-  if (role && profile.role !== role) {
+  const allowed = roles ?? (role ? [role] : null);
+  if (allowed && !allowed.includes(profile.role)) {
     return <Navigate to={homeFor(profile.role)} replace />;
   }
 

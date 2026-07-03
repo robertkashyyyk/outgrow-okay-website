@@ -9,7 +9,9 @@ import {
   Globe,
   Settings,
 } from "lucide-react";
+import { Navigate, useLocation } from "react-router-dom";
 import { AppShell, type NavItem } from "./AppShell";
+import { useAuth } from "../lib/auth-context";
 
 // Admin back office. Only the dashboard is built in Phase 2a; the rest are
 // stubbed as "soon" so the shape of the studio is visible without dead links.
@@ -26,5 +28,19 @@ const NAV: NavItem[] = [
 ];
 
 export function StudioLayout() {
-  return <AppShell areaLabel="Studio" nav={NAV} />;
+  const { profile } = useAuth();
+  const location = useLocation();
+  const isPartner = profile?.role === "partner";
+
+  // Partners are walled to the Website Review tool: any other Studio path bounces
+  // there, and the nav shows only that one item.
+  if (isPartner && !location.pathname.startsWith("/studio/site-review")) {
+    return <Navigate to="/studio/site-review" replace />;
+  }
+
+  const nav = isPartner
+    ? NAV.filter((n) => n.to === "/studio/site-review")
+    : NAV;
+
+  return <AppShell areaLabel={isPartner ? "Partner" : "Studio"} nav={nav} />;
 }
