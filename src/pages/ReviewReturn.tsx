@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Loader2, CheckCircle2, ChevronDown } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { Lockup } from "../components/Logo";
 import { Footer } from "../sections/Footer";
 import { useGround } from "../components/useGround";
@@ -18,7 +18,6 @@ export function ReviewReturn() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [showKit, setShowKit] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -89,64 +88,64 @@ export function ReviewReturn() {
             </div>
           ) : (
             <div className="max-w-content">
+              {/* Lead with the kit — most people arriving here still need to run it. */}
               <div className="max-w-prose">
-                <p className="eyebrow">One last step</p>
+                <p className="eyebrow">Your report kit</p>
                 <h1 className="mt-4 font-heading font-black text-2xl sm:text-3xl text-content leading-tight">
-                  Paste your report and I&rsquo;ll send you the read.
+                  Run it, then paste it back — I&rsquo;ll send you the read.
                 </h1>
                 <p className="mt-4 text-md text-muted leading-relaxed">
-                  Drop the finished operational review below. Once it&rsquo;s in, I&rsquo;ll read it and
-                  come back with an honest take on where I&rsquo;d focus first.
+                  Here are your two prompts. Run them in whatever AI you already use, then
+                  drop the finished report at the bottom &mdash; I&rsquo;ll come back with an
+                  honest take on where I&rsquo;d focus first.
                 </p>
+                <a
+                  href="#paste"
+                  className="mt-4 inline-block text-sm text-muted underline underline-offset-4 hover:text-content"
+                >
+                  Already have your report? Skip to the paste box &darr;
+                </a>
               </div>
 
-              <form onSubmit={submit} className="mt-7 max-w-prose">
-                <label htmlFor="report" className="block text-sm text-muted mb-2">
-                  Your report
-                </label>
-                <textarea
-                  id="report"
-                  value={report}
-                  onChange={(e) => setReport(e.target.value)}
-                  rows={14}
-                  placeholder="Paste the report text here. If your AI made a Google Doc, paste the text itself — not the link."
-                  className="w-full bg-surface border border-line rounded-md px-4 py-3 text-sm text-content placeholder:text-faint leading-relaxed transition-colors duration-fast focus:border-accent resize-y"
-                  autoFocus
-                />
-                {error && (
-                  <p className="mt-2 text-sm" style={{ color: "var(--oo-neg)" }}>
-                    {error}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={busy || report.trim().length < 40}
-                  className="mt-4 inline-flex items-center justify-center gap-2 bg-accent px-6 py-3.5 font-heading font-bold text-base text-ink rounded-md transition-transform duration-fast ease-out motion-safe:active:scale-[0.97] hover:brightness-105 disabled:opacity-60"
-                >
-                  {busy && <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />}
-                  Send it &amp; get my read
-                </button>
-              </form>
+              <div className="mt-9">
+                <ReviewKitPanel />
+              </div>
 
-              {/* Kit recap — reachable here any time via the personal link. */}
-              <div className="mt-10 border-t border-line pt-6">
-                <button
-                  onClick={() => setShowKit((v) => !v)}
-                  className="inline-flex items-center gap-2 text-sm text-muted hover:text-content transition-colors duration-fast"
-                >
-                  <ChevronDown
-                    size={16}
-                    strokeWidth={1.5}
-                    aria-hidden
-                    className={showKit ? "rotate-180 transition-transform" : "transition-transform"}
+              {/* Paste box — the "when you're done" step. */}
+              <div id="paste" className="mt-12 border-t border-line pt-9 max-w-prose scroll-mt-6">
+                <h2 className="font-heading font-bold text-lg text-content">
+                  Done? Paste your report.
+                </h2>
+                <p className="mt-1.5 text-sm text-muted">
+                  Paste the text of the finished review. If your AI made a Google Doc, paste
+                  the text itself &mdash; not the link.
+                </p>
+                <form onSubmit={submit} className="mt-5">
+                  <label htmlFor="report" className="sr-only">
+                    Your report
+                  </label>
+                  <textarea
+                    id="report"
+                    value={report}
+                    onChange={(e) => setReport(e.target.value)}
+                    rows={12}
+                    placeholder="Paste the report text here…"
+                    className="w-full bg-surface border border-line rounded-md px-4 py-3 text-sm text-content placeholder:text-faint leading-relaxed transition-colors duration-fast focus:border-accent resize-y"
                   />
-                  {showKit ? "Hide the prompts" : "Need the prompts again?"}
-                </button>
-                {showKit && (
-                  <div className="mt-6">
-                    <ReviewKitPanel />
-                  </div>
-                )}
+                  {error && (
+                    <p className="mt-2 text-sm" style={{ color: "var(--oo-neg)" }}>
+                      {error}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={busy || report.trim().length < 40}
+                    className="mt-4 inline-flex items-center justify-center gap-2 bg-accent px-6 py-3.5 font-heading font-bold text-base text-ink rounded-md transition-transform duration-fast ease-out motion-safe:active:scale-[0.97] hover:brightness-105 disabled:opacity-60"
+                  >
+                    {busy && <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />}
+                    Send it &amp; get my read
+                  </button>
+                </form>
               </div>
             </div>
           )}
