@@ -163,10 +163,10 @@ export function ContentEngine() {
         theme: theme.trim(),
         slots: activeSlots.map((s) => s.toISOString()),
         previousTitles: existing.map((p) => p.title).filter(Boolean),
-        // "Publish-dated" mode: each post is saved published with its slot date,
-        // so future dates schedule themselves and past dates backfill. The auto
-        // next-open-slots flow stays as pending-review for a look before it's live.
-        backfill: pickWeek,
+        // Past weeks backfill: saved published with their past date, live at once.
+        // Future/current weeks go through review instead — saved Pending review with
+        // a scheduled_at, so nothing goes live until you publish it yourself.
+        backfill: pickWeek && !hasFutureSlot,
       });
     } catch {
       /* keepalive fetch — the job runs server-side regardless */
@@ -225,7 +225,7 @@ export function ContentEngine() {
             {weekSlots.length > 0 && (
               <div>
                 <p className="text-sm text-muted mb-2">
-                  {hasFutureSlot ? "Will schedule posts dated:" : "Will publish posts dated:"}
+                  {hasFutureSlot ? "Will queue for review, dated:" : "Will publish posts dated:"}
                 </p>
                 <ul className="space-y-1.5">
                   {weekSlots.map((s, i) => (
@@ -312,7 +312,9 @@ export function ContentEngine() {
 
         <p className="text-sm text-faint text-center">
           {pickWeek
-            ? "Each post is published with its slot's date — future dates appear on Insights automatically on the day, past dates appear immediately."
+            ? hasFutureSlot
+              ? "Posts are saved as Pending review, dated for that week — review and publish them yourself; nothing goes live until you do."
+              : "Posts are saved as published with past dates — they appear on Insights immediately."
             : "New posts are saved as Pending for your review, then scheduled. Generation runs in the background — they'll appear in the list as they're written."}
         </p>
       </div>
