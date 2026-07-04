@@ -11,6 +11,8 @@ export interface Insight {
   excerpt: string | null;
   content: string;
   cover_image_url: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
   tags: string[];
   status: PostStatus;
   scheduled_at: string | null;

@@ -40,13 +40,89 @@ async function updateJob(
     .eq('id', jobId)
 }
 
+// Break a single theme into N genuinely distinct angles before any post is written.
+// This is what stops a batch collapsing into four near-identical posts: each slot
+// gets its own facet + its own entry point, rather than the model re-deriving the
+// same hook from the same theme every time. Falls back to blank angles (still varied
+// by the opening-feedback in generatePost) if the planning call fails.
+async function planAngles(
+  theme: string,
+  count: number,
+  previousTitles: string[],
+  anthropicKey: string,
+): Promise<string[]> {
+  const blank = Array.from({ length: count }, () => '')
+  if (count <= 1) return blank
+
+  const avoidLine = previousTitles.length > 0
+    ? `\n\nAlready-published posts (do NOT overlap with these):\n${previousTitles.map((t) => `- ${t}`).join('\n')}`
+    : ''
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 1500,
+        messages: [{
+          role: 'user',
+          content: `You are planning a batch of ${count} blog posts for Outgrow Okay. ${VOICE}
+
+Theme for the batch (it may already list some angles):
+"${theme}"
+
+Produce EXACTLY ${count} distinct angles — one per post. Each angle must:
+- cover a genuinely different facet of the theme: a different argument, a different reader problem, a different concrete example
+- naturally lead to a DIFFERENT opening image or hook (no two should be able to start the same way)
+- be one or two sentences: name the specific sub-topic AND the concrete scenario the post should open on
+
+No two angles should overlap in their core point or their example.${avoidLine}
+
+Return ONLY a valid JSON array of exactly ${count} strings. No markdown fences, no explanation.`,
+        }],
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) return blank
+    const text = data.content?.[0]?.text ?? ''
+    const match = text.match(/\[[\s\S]*\]/)
+    if (!match) return blank
+    const parsed = JSON.parse(match[0])
+    if (!Array.isArray(parsed)) return blank
+    // Pad/trim to exactly `count` so the slot loop always has an angle to hand.
+    return Array.from({ length: count }, (_, i) =>
+      typeof parsed[i] === 'string' ? parsed[i] : ''
+    )
+  } catch {
+    return blank
+  }
+}
+
 async function generatePost(
   theme: string,
+  angle: string,
   previousTitles: string[],
+  usedOpenings: string[],
   anthropicKey: string,
 ): Promise<{ title: string; slug: string; excerpt: string; content: string; tags: string[] } | null> {
   const avoidLine = previousTitles.length > 0
     ? `\n\nIMPORTANT: Do NOT reuse any of these titles or closely related topics (already covered):\n${previousTitles.map((t) => `- ${t}`).join('\n')}`
+    : ''
+
+  const angleLine = angle.trim()
+    ? `\n\nThis specific post MUST take this angle, and only this angle:\n"${angle.trim()}"\nStay on it — don't drift into the wider theme or the other posts' territory.`
+    : ''
+
+  // The real fix for near-duplicate posts: show the model the openings it has
+  // already written this batch and forbid echoing them. Titles alone weren't
+  // enough — the body kept re-using the same first image.
+  const openingsLine = usedOpenings.length > 0
+    ? `\n\nThese openings have ALREADY been used in this batch — your first sentence and first image must be clearly different from every one of them (different scenario, different object, different framing):\n${usedOpenings.map((o) => `- "${o}"`).join('\n')}`
     : ''
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -63,7 +139,7 @@ async function generatePost(
         role: 'user',
         content: `You are writing for Outgrow Okay's Insights blog. ${VOICE}
 
-Generate ONE post on this theme: "${theme}"${avoidLine}
+Generate ONE post on this theme: "${theme}"${angleLine}${avoidLine}${openingsLine}
 
 The post should be:
 - 600-900 words of substantive, practical content
@@ -193,9 +269,19 @@ async function runPipeline(
   backfill: boolean,
 ) {
   const titlesUsed = [...previousTitles]
+  const openingsUsed: string[] = []
   const savedPosts: { id: string; title: string; excerpt: string }[] = []
 
   try {
+    // Plan distinct angles once, up front, so each slot writes a different post
+    // rather than N variations on the same hook.
+    await updateJob(supabase, jobId, {
+      message: 'Planning angles…',
+      progress: 0,
+      total: slots.length * 2,
+    })
+    const angles = await planAngles(theme, slots.length, previousTitles, anthropicKey)
+
     // Phase 1: write + save posts.
     for (let i = 0; i < slots.length; i++) {
       await updateJob(supabase, jobId, {
@@ -204,9 +290,12 @@ async function runPipeline(
         total: slots.length * 2,
       })
 
-      const post = await generatePost(theme, titlesUsed, anthropicKey)
+      const post = await generatePost(theme, angles[i] ?? '', titlesUsed, openingsUsed, anthropicKey)
       if (!post) continue
       titlesUsed.push(post.title)
+      // Feed this post's opening back in so the next slot can't echo it.
+      const opening = post.content.replace(/^#.*$/m, '').trim().slice(0, 160)
+      if (opening) openingsUsed.push(opening)
 
       const { data: saved } = await supabase
         .from('blog_posts')

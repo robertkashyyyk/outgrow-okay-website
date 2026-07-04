@@ -81,7 +81,11 @@ function getMondayOfWeek(dateStr: string): string {
   d.setDate(d.getDate() + diff);
   return isoDateKey(d);
 }
-function computeBackfillSlots(mondayStr: string, existing: Insight[]): Date[] {
+// Mon–Fri 14:00 slots for the picked week, minus any weekday that already holds
+// a post. Works for any week — past OR future. A future-dated slot, saved as a
+// published post, stays hidden until its date passes and then appears on its own
+// (public RLS: status='published' AND published_at <= now). That's the scheduling.
+function computeWeekSlots(mondayStr: string, existing: Insight[]): Date[] {
   if (!mondayStr) return [];
   const occupied = new Set(
     existing
@@ -106,13 +110,15 @@ export function ContentEngine() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fired, setFired] = useState(false);
-  const [backfillMode, setBackfillMode] = useState(false);
-  const [backfillDate, setBackfillDate] = useState("");
-  const [maxBackfill, setMaxBackfill] = useState(""); // yesterday, computed off-render
+  const [pickWeek, setPickWeek] = useState(false);
+  const [weekDate, setWeekDate] = useState("");
 
-  const backfillMonday = backfillDate ? getMondayOfWeek(backfillDate) : "";
-  const backfillSlots = computeBackfillSlots(backfillMonday, existing);
-  const activeSlots = backfillMode ? backfillSlots : slots;
+  const pickedMonday = weekDate ? getMondayOfWeek(weekDate) : "";
+  const weekSlots = computeWeekSlots(pickedMonday, existing);
+  const activeSlots = pickWeek ? weekSlots : slots;
+  // Any slot still in the future means the batch schedules (appears on its day)
+  // rather than going live immediately.
+  const hasFutureSlot = weekSlots.some((s) => s.getTime() > Date.now());
 
   useEffect(() => {
     let active = true;
@@ -125,9 +131,6 @@ export function ContentEngine() {
       const posts = (data ?? []) as Insight[];
       setExisting(posts);
       setSlots(computeAvailableSlots(posts));
-      const y = new Date();
-      y.setDate(y.getDate() - 1);
-      setMaxBackfill(isoDateKey(y));
       setLoading(false);
     })();
     return () => {
@@ -140,16 +143,16 @@ export function ContentEngine() {
       setError("Describe your theme first.");
       return;
     }
+    if (pickWeek && !weekDate) {
+      setError("Pick a date in the week you want.");
+      return;
+    }
     if (activeSlots.length === 0) {
       setError(
-        backfillMode
+        pickWeek
           ? "No open slots that week — every weekday already has a post."
           : "No open slots this week.",
       );
-      return;
-    }
-    if (backfillMode && !backfillDate) {
-      setError("Pick a date in the week you want to backfill.");
       return;
     }
 
@@ -160,7 +163,10 @@ export function ContentEngine() {
         theme: theme.trim(),
         slots: activeSlots.map((s) => s.toISOString()),
         previousTitles: existing.map((p) => p.title).filter(Boolean),
-        backfill: backfillMode,
+        // "Publish-dated" mode: each post is saved published with its slot date,
+        // so future dates schedule themselves and past dates backfill. The auto
+        // next-open-slots flow stays as pending-review for a look before it's live.
+        backfill: pickWeek,
       });
     } catch {
       /* keepalive fetch — the job runs server-side regardless */
@@ -191,10 +197,10 @@ export function ContentEngine() {
             Content engine
           </h1>
           <p className="text-sm text-muted mt-0.5">
-            {backfillMode
-              ? backfillDate
-                ? `${backfillSlots.length} slot${backfillSlots.length !== 1 ? "s" : ""} — ${weekLabel(backfillSlots)} (backfill)`
-                : "Backfill mode — pick a past week"
+            {pickWeek
+              ? weekDate
+                ? `${weekSlots.length} slot${weekSlots.length !== 1 ? "s" : ""} — ${weekLabel(weekSlots)}`
+                : "Pick any week — past or future"
               : `${slots.length} slot${slots.length !== 1 ? "s" : ""} open — ${weekLabel(slots) || "next week"}`}
           </p>
         </div>
@@ -202,26 +208,27 @@ export function ContentEngine() {
 
       <div className="mt-7 space-y-5">
         {/* Slots panel */}
-        {backfillMode ? (
+        {pickWeek ? (
           <div className="rounded-lg border border-line bg-surface p-4 space-y-3">
             <div>
-              <label htmlFor="backfill" className={LABEL}>
+              <label htmlFor="week" className={LABEL}>
                 Pick any day in the target week
               </label>
               <input
-                id="backfill"
+                id="week"
                 type="date"
-                max={maxBackfill}
-                value={backfillDate}
-                onChange={(e) => setBackfillDate(e.target.value)}
+                value={weekDate}
+                onChange={(e) => setWeekDate(e.target.value)}
                 className={`${FIELD} num w-auto`}
               />
             </div>
-            {backfillSlots.length > 0 && (
+            {weekSlots.length > 0 && (
               <div>
-                <p className="text-sm text-muted mb-2">Will publish posts dated:</p>
+                <p className="text-sm text-muted mb-2">
+                  {hasFutureSlot ? "Will schedule posts dated:" : "Will publish posts dated:"}
+                </p>
                 <ul className="space-y-1.5">
-                  {backfillSlots.map((s, i) => (
+                  {weekSlots.map((s, i) => (
                     <li key={i} className="flex items-center gap-2 text-sm text-faint">
                       <Calendar size={13} strokeWidth={1.5} className="shrink-0" aria-hidden />
                       {formatSlot(s)}
@@ -230,7 +237,7 @@ export function ContentEngine() {
                 </ul>
               </div>
             )}
-            {backfillDate && backfillSlots.length === 0 && (
+            {weekDate && weekSlots.length === 0 && (
               <p className="text-sm text-faint">All weekdays that week already have posts.</p>
             )}
           </div>
@@ -248,7 +255,9 @@ export function ContentEngine() {
           </div>
         ) : (
           <div className="rounded-lg border border-line bg-surface p-4">
-            <p className="text-sm text-muted">All slots this week are full. Check back Monday.</p>
+            <p className="text-sm text-muted">
+              All slots this week are full. Pick a specific week below to go further out.
+            </p>
           </div>
         )}
 
@@ -279,31 +288,31 @@ export function ContentEngine() {
 
         <button
           onClick={() => void handleGenerate()}
-          disabled={activeSlots.length === 0 || !theme.trim() || fired || (backfillMode && !backfillDate)}
+          disabled={activeSlots.length === 0 || !theme.trim() || fired || (pickWeek && !weekDate)}
           className="w-full inline-flex items-center justify-center gap-2 bg-accent px-6 py-4 font-heading font-bold text-base text-ink rounded-md transition-transform duration-fast ease-out motion-safe:active:scale-[0.99] hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Wand2 size={18} strokeWidth={2} aria-hidden />
-          {backfillMode
-            ? `Backfill ${activeSlots.length} post${activeSlots.length !== 1 ? "s" : ""}${backfillDate ? ` — ${weekLabel(backfillSlots)}` : ""}`
+          {pickWeek
+            ? `Generate ${activeSlots.length} post${activeSlots.length !== 1 ? "s" : ""}${weekDate ? ` — ${weekLabel(weekSlots)}` : ""}`
             : `Generate ${activeSlots.length} post${activeSlots.length !== 1 ? "s" : ""} for ${weekLabel(slots) || "next week"}`}
         </button>
 
         <div className="text-center">
           <button
             onClick={() => {
-              setBackfillMode((m) => !m);
-              setBackfillDate("");
+              setPickWeek((m) => !m);
+              setWeekDate("");
               setError(null);
             }}
             className="text-sm text-faint hover:text-content underline underline-offset-2 transition-colors duration-fast"
           >
-            {backfillMode ? "← Back to normal mode" : "Backfill a past week"}
+            {pickWeek ? "← Back to next open slots" : "Pick a specific week (future or past)"}
           </button>
         </div>
 
         <p className="text-sm text-faint text-center">
-          {backfillMode
-            ? "Posts are saved as published with past dates — they appear on Insights immediately."
+          {pickWeek
+            ? "Each post is published with its slot's date — future dates appear on Insights automatically on the day, past dates appear immediately."
             : "New posts are saved as Pending for your review, then scheduled. Generation runs in the background — they'll appear in the list as they're written."}
         </p>
       </div>

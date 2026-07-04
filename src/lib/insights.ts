@@ -27,10 +27,12 @@ export interface PostSummary {
 export interface Post extends PostSummary {
   content: string;
   cover_image_url: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
 }
 
 const SUMMARY_COLS = "id,title,slug,subtitle,excerpt,tags,published_at";
-const FULL_COLS = `${SUMMARY_COLS},content,cover_image_url`;
+const FULL_COLS = `${SUMMARY_COLS},content,cover_image_url,cta_label,cta_url`;
 
 export async function fetchPublishedPosts(): Promise<PostSummary[]> {
   const url = `${REST}?select=${SUMMARY_COLS}&order=published_at.desc`;

@@ -8,6 +8,13 @@ import { Reveal } from "../components/Reveal";
 import { useGround } from "../components/useGround";
 import { fetchPostBySlug, formatPostDate, type Post } from "../lib/insights";
 
+// The canonical CTA styling (matches components/CTAButton): ink on accent, AA pairing.
+const CTA_CLASSES =
+  "inline-flex items-center justify-center bg-accent px-6 py-4 " +
+  "font-heading font-bold text-base text-ink rounded-md " +
+  "transition-transform duration-fast ease-out motion-safe:active:scale-[0.97] " +
+  "hover:brightness-105";
+
 // Single Insight article. Reads one live published post by slug (public-read RLS).
 // Body is markdown, rendered into the token-styled .oo-article wrapper. If the slug
 // isn't a live post, shows a not-found state rather than a blank page.
@@ -145,6 +152,27 @@ export function InsightPost() {
                   <ReactMarkdown>{post.content}</ReactMarkdown>
                 </div>
               </Reveal>
+
+              {post.cta_label && post.cta_url && (
+                <Reveal delay={80}>
+                  <div className="mt-12 border-t border-line pt-8">
+                    {post.cta_url.startsWith("/") ? (
+                      <Link to={post.cta_url} className={CTA_CLASSES}>
+                        {post.cta_label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={post.cta_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={CTA_CLASSES}
+                      >
+                        {post.cta_label}
+                      </a>
+                    )}
+                  </div>
+                </Reveal>
+              )}
 
               <div className="mt-12 border-t border-line pt-8">{BackLink}</div>
             </article>
