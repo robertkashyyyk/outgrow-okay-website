@@ -54,6 +54,8 @@ export function InsightEditor() {
   const [scheduledLocal, setScheduledLocal] = useState("");
   const [publishedAt, setPublishedAt] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [ctaLabel, setCtaLabel] = useState("");
+  const [ctaUrl, setCtaUrl] = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -87,6 +89,8 @@ export function InsightEditor() {
         setScheduledLocal(isoToLocalInput(post.scheduled_at));
         setPublishedAt(post.published_at);
         setCoverUrl(post.cover_image_url);
+        setCtaLabel(post.cta_label ?? "");
+        setCtaUrl(post.cta_url ?? "");
       } catch (e) {
         if (active) setError((e as Error).message);
       } finally {
@@ -199,9 +203,12 @@ export function InsightEditor() {
     setError(null);
 
     const nextStatus: PostStatus = publish ? "published" : status;
-    const nextPublishedAt = publish
-      ? publishedAt ?? new Date().toISOString()
-      : publishedAt;
+    // A published post always carries a date: keep the one set in the editor,
+    // otherwise stamp now. Non-published statuses keep whatever's there.
+    const nextPublishedAt =
+      nextStatus === "published"
+        ? publishedAt ?? new Date().toISOString()
+        : publishedAt;
 
     const draft = {
       title: title.trim(),
@@ -210,6 +217,8 @@ export function InsightEditor() {
       excerpt: excerpt.trim() || null,
       content,
       cover_image_url: coverUrl,
+      cta_label: ctaLabel.trim() || null,
+      cta_url: ctaUrl.trim() || null,
       tags: parsedTags(),
       status: nextStatus,
       scheduled_at:
@@ -418,6 +427,33 @@ export function InsightEditor() {
           />
         </div>
 
+        {/* Optional call-to-action button, rendered at the foot of the article. */}
+        <div>
+          <span className={LABEL}>
+            Call to action <span className="text-faint">(optional)</span>
+          </span>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input
+              type="text"
+              value={ctaLabel}
+              onChange={(e) => setCtaLabel(e.target.value)}
+              placeholder="Button text — e.g. Get a free review"
+              className={FIELD}
+            />
+            <input
+              type="text"
+              value={ctaUrl}
+              onChange={(e) => setCtaUrl(e.target.value)}
+              placeholder="Link — e.g. /review or https://…"
+              className={`${FIELD} num`}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-faint">
+            Shows a button under the post only when both are filled in. Use a site path
+            like <span className="num">/review</span> for an internal link.
+          </p>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="status" className={LABEL}>
@@ -448,6 +484,23 @@ export function InsightEditor() {
                 onChange={(e) => setScheduledLocal(e.target.value)}
                 className={FIELD}
               />
+            </div>
+          )}
+          {status === "published" && (
+            <div>
+              <label htmlFor="published" className={LABEL}>
+                Published date
+              </label>
+              <input
+                id="published"
+                type="datetime-local"
+                value={isoToLocalInput(publishedAt)}
+                onChange={(e) => setPublishedAt(localInputToIso(e.target.value))}
+                className={FIELD}
+              />
+              <p className="mt-1.5 text-xs text-faint">
+                Shown as the post date on the live page.
+              </p>
             </div>
           )}
         </div>

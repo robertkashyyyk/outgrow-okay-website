@@ -8,7 +8,7 @@ import { supabase } from "./supabase";
 import type { Insight, InsightDraft, PostStatus } from "../types/insight";
 
 const COLS =
-  "id,title,slug,subtitle,excerpt,content,cover_image_url,tags,status,scheduled_at,published_at,created_at,updated_at";
+  "id,title,slug,subtitle,excerpt,content,cover_image_url,cta_label,cta_url,tags,status,scheduled_at,published_at,created_at,updated_at";
 
 export async function listInsights(): Promise<Insight[]> {
   const { data, error } = await supabase
