@@ -29,6 +29,8 @@ import { SiteReviewDetail } from "./pages/studio/site-review/SiteReviewDetail";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
+import LedgerModule from "./pages/studio/ledger/LedgerModule";
+import { supabase } from "./lib/supabase";
 import { PortalDashboard } from "./pages/portal/PortalDashboard";
 import { PortalProposals } from "./pages/portal/PortalProposals";
 import { PortalProposalView } from "./pages/portal/PortalProposalView";
@@ -72,6 +74,7 @@ function App() {
           <Route path="clients/:id" element={<ClientDetail />} />
           <Route path="clients/:id/edit" element={<ClientForm />} />
           <Route path="tasks" element={<TaskList />} />
+          <Route path="ledger" element={<LedgerModule supabase={supabase} />} />
           <Route path="signal" element={<SignalPage />} />
           <Route path="proposals" element={<StudioProposals />} />
           <Route path="proposals/:slug" element={<StudioProposalPreview />} />
