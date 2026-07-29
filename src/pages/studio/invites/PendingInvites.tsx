@@ -5,11 +5,10 @@ import { supabase } from "../../../lib/supabase";
 // Admin-only: accounts that were invited but never completed onboarding
 // (confirmed_at is null → they never followed a valid link and set a password).
 // Reads via the admin_pending_invites() security-definer RPC (self-gated to admins).
-// Resend re-sends a fresh sign-in link through the existing, admin-authorised
-// provision-account function — for an already-existing (unconfirmed) email that
-// takes provision-account's recovery branch. If a resend ever fails to let someone
-// in, the reliable fallback is to delete the unconfirmed auth.users row and
-// re-provision clean (the invite branch).
+// Resend calls the admin-authorised provision-account function, which for a
+// never-activated account with no dependent rows deletes the shell and sends a fresh
+// INVITE (preserving its role) — the path we know confirms and sets a password.
+// Confirmed accounts or ones with dependent data get a recovery link instead.
 
 interface PendingInvite {
   id: string;
@@ -64,7 +63,7 @@ export function PendingInvites() {
       if (data?.email_sent === false) {
         setNotice(`Link re-minted for ${inv.email}, but the email didn't send — check the provision-account logs.`);
       } else {
-        setNotice(`Fresh sign-in link sent to ${inv.email}.`);
+        setNotice(`Fresh invite sent to ${inv.email}.`);
       }
     } catch (e) {
       setError((e as Error).message);

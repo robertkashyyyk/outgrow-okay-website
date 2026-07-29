@@ -9,6 +9,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // clicks the link, lands on /welcome already signed in, and sets their own password.
 // No password ever travels in plaintext.
 //
+// Re-inviting an email that already has an account branches on state:
+//  • never-activated (unconfirmed, never signed in) AND no dependent rows → delete the
+//    shell and send a fresh INVITE (the path we know confirms + sets a password),
+//    preserving whatever role it had (e.g. partner). No recovery-semantics guesswork.
+//  • otherwise (confirmed, or has dependent data) → send a RECOVERY link.
+//
 // Secrets used: SUPABASE_URL (auto-injected), SERVICE_ROLE_KEY / SUPABASE_SERVICE_ROLE_KEY,
 // RESEND_API_KEY, optional SITE_URL. Outgrow Okay is a trading name of Kashyyyk Ltd.
 
@@ -138,106 +144,97 @@ serve(async (req) => {
     return json({ error: 'Server misconfigured' }, 500)
   }
 
-  // ── Mint the invite link (creates the auth user, sends no email) ─────────────
-  // full_name rides in user_metadata; the handle_new_user trigger reads it into the
-  // profiles row. The profiles row defaults role='customer'; if an admin is being
-  // provisioned we patch the role after the user exists.
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-    type: 'invite',
-    email,
-    options: {
-      data: { full_name: fullName },
-      redirectTo: `${SITE_URL}/welcome`,
-    },
-  })
-
-  if (linkError || !linkData?.properties?.action_link) {
-    const msg = linkError?.message ?? 'Could not generate invite link'
-    // Most common cause: the email already has an account.
-    const already = /already.*registered|already been registered|exists/i.test(msg)
-
-    // If the account already exists, ADOPT it: return the existing user's id so the
-    // caller can link the contact (contact.profile_id), and send a recovery link so
-    // they can sign in / (re)set a password. This stops a pre-existing login (e.g.
-    // someone who once booked a call) from blocking a Portal invite.
-    if (already) {
-      const { data: existingProfile } = await admin
-        .from('profiles')
-        .select('id')
-        .ilike('email', email)
-        .maybeSingle()
-
-      if (existingProfile?.id) {
-        let emailSent = false
-        const resendKey = Deno.env.get('RESEND_API_KEY')
-        const { data: rec } = await admin.auth.admin.generateLink({
-          type: 'recovery',
-          email,
-          options: { redirectTo: `${SITE_URL}/welcome` },
-        })
-        const recLink = rec?.properties?.action_link
-        if (resendKey && recLink) {
-          const firstName = fullName ? fullName.split(' ')[0] : 'there'
-          const r = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: FROM_INVITE,
-              to: [email],
-              subject: 'Sign in to Outgrow Okay',
-              html: inviteHtml(firstName, recLink),
-            }),
-          })
-          emailSent = r.ok
-          if (!r.ok) console.error('Resend recovery email failed:', r.status, await r.text())
-        }
-        return json({ success: true, user_id: existingProfile.id, existing: true, email_sent: emailSent })
-      }
-    }
-
-    console.error('generateLink failed:', msg)
-    return json(
-      { error: already ? 'That email already has an account.' : msg },
-      already ? 409 : 502,
-    )
-  }
-
-  const userId = linkData.user?.id ?? null
-  const actionLink = linkData.properties.action_link
-
-  // If provisioning an admin, elevate the freshly-created profile. The role-protect
-  // trigger allows this because we're using the service-role key.
-  if (role === 'admin' && userId) {
-    const { error: roleError } = await admin
-      .from('profiles')
-      .update({ role: 'admin' })
-      .eq('id', userId)
-    if (roleError) console.error('Role elevation failed:', JSON.stringify(roleError))
-  }
-
-  // ── Send the branded invite via Resend ──────────────────────────────────────
   const resendKey = Deno.env.get('RESEND_API_KEY')
-  let emailSent = false
-  if (!resendKey) {
-    console.error('RESEND_API_KEY not set — account created but no email sent')
-  } else {
-    const firstName = fullName ? fullName.split(' ')[0] : 'there'
+  const firstName = fullName ? fullName.split(' ')[0] : 'there'
+
+  // Send a branded email carrying an action link. Returns whether it went out.
+  async function sendActionEmail(actionLink: string, subject: string): Promise<boolean> {
+    if (!resendKey) {
+      console.error('RESEND_API_KEY not set — link minted but no email sent')
+      return false
+    }
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         from: FROM_INVITE,
         to: [email],
-        subject: 'Your Outgrow Okay account',
+        subject,
         html: inviteHtml(firstName, actionLink),
       }),
     })
-    if (r.ok) {
-      emailSent = true
-    } else {
-      console.error('Resend invite email failed:', r.status, await r.text())
-    }
+    if (!r.ok) console.error('Resend email failed:', r.status, await r.text())
+    return r.ok
   }
 
-  return json({ success: true, user_id: userId, role, email_sent: emailSent })
+  // Apply a non-default role to a freshly created profile. The service-role client
+  // satisfies the profiles_protect_role trigger (auth.role() = 'service_role'), so no
+  // trigger-disabling is needed. 'customer' is the default handle_new_user already sets.
+  async function applyRole(userId: string, wanted: string) {
+    if (!userId || !wanted || wanted === 'customer') return
+    const { error } = await admin.from('profiles').update({ role: wanted }).eq('id', userId)
+    if (error) console.error('Role set failed:', JSON.stringify(error))
+  }
+
+  // Mint a brand-new invite (creates the auth user), set its role, and email it.
+  async function freshInvite(wantedRole: string) {
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: 'invite',
+      email,
+      options: { data: { full_name: fullName }, redirectTo: `${SITE_URL}/welcome` },
+    })
+    if (error || !data?.properties?.action_link) {
+      console.error('generateLink invite failed:', error?.message)
+      return json({ error: error?.message ?? 'Could not generate invite link' }, 502)
+    }
+    const userId = data.user?.id ?? null
+    if (userId) await applyRole(userId, wantedRole)
+    const emailSent = await sendActionEmail(data.properties.action_link, 'Your Outgrow Okay account')
+    return json({ success: true, user_id: userId, role: wantedRole, email_sent: emailSent, existing: false })
+  }
+
+  // ── Does this email already have an account? ────────────────────────────────
+  const { data: existingProfile } = await admin
+    .from('profiles')
+    .select('id, role')
+    .ilike('email', email)
+    .maybeSingle()
+
+  // Brand-new email → straight invite with the requested role.
+  if (!existingProfile?.id) {
+    return await freshInvite(role)
+  }
+
+  // Existing account — decide between a clean re-invite and a recovery link.
+  const uid = existingProfile.id as string
+  const { data: got } = await admin.auth.admin.getUserById(uid)
+  const u = got?.user
+  const neverActivated = !!u && !u.email_confirmed_at && !u.last_sign_in_at
+
+  // Dependent rows a delete would damage — if any exist, never delete.
+  const [contacts, reviews] = await Promise.all([
+    admin.from('contacts').select('id', { count: 'exact', head: true }).eq('profile_id', uid),
+    admin.from('site_reviews').select('id', { count: 'exact', head: true }).eq('created_by', uid),
+  ])
+  const hasDeps = (contacts.count ?? 0) > 0 || (reviews.count ?? 0) > 0
+
+  if (neverActivated && !hasDeps) {
+    // Safe, known-good path: delete the never-activated shell and send a fresh invite,
+    // preserving whatever role it carried (e.g. partner). An invite link definitely
+    // confirms and password-sets, so this sidesteps recovery-link semantics entirely.
+    const preservedRole = (existingProfile.role as string) ?? role
+    const { error: delErr } = await admin.auth.admin.deleteUser(uid)
+    if (!delErr) return await freshInvite(preservedRole)
+    console.error('deleteUser failed, falling back to recovery:', delErr.message)
+  }
+
+  // Confirmed, or has dependent data, or the delete failed → recovery link.
+  const { data: rec } = await admin.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+    options: { redirectTo: `${SITE_URL}/welcome` },
+  })
+  const recLink = rec?.properties?.action_link
+  const emailSent = recLink ? await sendActionEmail(recLink, 'Sign in to Outgrow Okay') : false
+  return json({ success: true, user_id: uid, existing: true, email_sent: emailSent })
 })
