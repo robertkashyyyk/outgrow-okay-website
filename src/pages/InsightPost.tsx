@@ -96,25 +96,27 @@ export function InsightPost() {
 
           {resolved === "ready" && post && (
             <article>
-              {/* Title block. With a cover, the image sits behind it at low opacity
+              {/* Title block. With a cover, the image sits behind the title as a
+                  full-bleed dim backdrop that bleeds down into the first paragraphs
                   and fades into the ground — the Kashyyyk hero treatment. */}
               <div className="relative">
                 {post.cover_image_url && (
                   <div
                     aria-hidden
-                    className="pointer-events-none absolute inset-x-0 -top-12 bottom-0 -z-10 overflow-hidden"
+                    className="pointer-events-none absolute left-1/2 top-[-140px] -z-10 h-[560px] w-screen -translate-x-1/2 overflow-hidden"
                   >
                     <img
                       src={post.cover_image_url}
                       alt=""
-                      className="h-full w-full object-cover opacity-[0.22]"
+                      className="h-full w-full object-cover object-center opacity-40"
                     />
-                    {/* Fade the image into the page ground on all edges. */}
+                    {/* Protect the title text at the top, show the image through the
+                        middle, and ground out at the bottom so it bleeds into the page. */}
                     <div
                       className="absolute inset-0"
                       style={{
                         background:
-                          "linear-gradient(to bottom, color-mix(in srgb, var(--oo-ground) 60%, transparent) 0%, color-mix(in srgb, var(--oo-ground) 20%, transparent) 40%, var(--oo-ground) 100%)",
+                          "linear-gradient(to bottom, color-mix(in srgb, var(--oo-ground) 70%, transparent) 0%, color-mix(in srgb, var(--oo-ground) 35%, transparent) 50%, var(--oo-ground) 100%)",
                       }}
                     />
                   </div>
@@ -147,11 +149,11 @@ export function InsightPost() {
                 </Reveal>
               </div>
 
-              <Reveal delay={80}>
-                <div className="oo-article mt-9">
-                  <ReactMarkdown>{post.content}</ReactMarkdown>
-                </div>
-              </Reveal>
+              {/* Body renders immediately (no scroll-reveal) — it starts near the
+                  fold, and hiding it until intersection reads as a blank page. */}
+              <div className="oo-article mt-9">
+                <ReactMarkdown>{post.content}</ReactMarkdown>
+              </div>
 
               {post.cta_label && post.cta_url && (
                 <Reveal delay={80}>
