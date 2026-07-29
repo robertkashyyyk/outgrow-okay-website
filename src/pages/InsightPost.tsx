@@ -14,6 +14,8 @@ const CTA_CLASSES =
   "font-heading font-bold text-base text-ink rounded-md " +
   "transition-transform duration-fast ease-out motion-safe:active:scale-[0.97] " +
   "hover:brightness-105";
+const KICKER = "num text-xs uppercase tracking-wide text-accent";
+const BOOKING_URL = "https://calendar.app.google/nYF9YE9U84G44dNe8";
 
 // Single Insight article. Reads one live published post by slug (public-read RLS).
 // Body is markdown, rendered into the token-styled .oo-article wrapper. If the slug
@@ -148,26 +150,44 @@ export function InsightPost() {
                 <ReactMarkdown>{post.content}</ReactMarkdown>
               </div>
 
-              {post.cta_label && post.cta_url && (
-                <Reveal delay={80}>
-                  <div className="mt-12 border-t border-line pt-8">
-                    {post.cta_url.startsWith("/") ? (
-                      <Link to={post.cta_url} className={CTA_CLASSES}>
-                        {post.cta_label}
-                      </Link>
-                    ) : (
-                      <a
-                        href={post.cta_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={CTA_CLASSES}
-                      >
-                        {post.cta_label}
-                      </a>
-                    )}
+              {/* Unified end-of-post CTA: a low-commitment free workbook + a
+                  no-obligation call. Uses the post's own booking link if set,
+                  otherwise the default 30-minute link. */}
+              <Reveal delay={80}>
+                <div className="mt-14 rounded-lg border border-line bg-surface/60 p-6 sm:p-8">
+                  <p className={KICKER}>Your move</p>
+                  <h2 className="mt-2 font-heading font-black text-xl text-content">
+                    If any of this is landing, do something with it.
+                  </h2>
+                  <p className="mt-3 text-md text-muted">
+                    Take the free Bottleneck Workbook — find your one constraint, then send
+                    it over and I&rsquo;ll give you an honest read on where to start.
+                  </p>
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                    <Link to="/workbook" className={CTA_CLASSES}>
+                      Take the free workbook
+                    </Link>
+                    <a
+                      href={
+                        post.cta_url && !post.cta_url.startsWith("/")
+                          ? post.cta_url
+                          : BOOKING_URL
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center border border-line bg-ground px-6 py-4 font-heading font-bold text-base text-content rounded-md transition-colors duration-fast hover:border-content"
+                    >
+                      {post.cta_label && !post.cta_url?.startsWith("/")
+                        ? post.cta_label
+                        : "Book a 30-minute call"}
+                    </a>
                   </div>
-                </Reveal>
-              )}
+                  <p className="mt-4 text-xs text-faint">
+                    Both free. No pitch, no obligation — the call goes straight to a calendar,
+                    no payment.
+                  </p>
+                </div>
+              </Reveal>
 
               <div className="mt-12 border-t border-line pt-8">{BackLink}</div>
             </article>

@@ -7,6 +7,7 @@ import { Book } from "./pages/Book";
 import { ProgressLog } from "./pages/ProgressLog";
 import { Insights } from "./pages/Insights";
 import { InsightPost } from "./pages/InsightPost";
+import { Workbook } from "./pages/Workbook";
 import { Privacy } from "./pages/Privacy";
 import { Review } from "./pages/Review";
 import { ReviewReturn } from "./pages/ReviewReturn";
@@ -47,6 +48,7 @@ function App() {
         <Route path="/book" element={<Book />} />
         <Route path="/insights" element={<Insights />} />
         <Route path="/insights/:slug" element={<InsightPost />} />
+        <Route path="/workbook" element={<Workbook />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/review" element={<Review />} />
         <Route path="/review/return" element={<ReviewReturn />} />
