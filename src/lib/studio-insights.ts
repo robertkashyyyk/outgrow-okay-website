@@ -86,6 +86,27 @@ export async function goLive(insight: Insight): Promise<Insight> {
   });
 }
 
+/**
+ * Publish a post, honouring its intended date. There's no scheduler cron — a post
+ * becomes publicly visible when status='published' AND published_at <= now (the
+ * public RLS rule). So a FUTURE date is real scheduling: the post is saved published
+ * but stays hidden until that moment. A past/absent date goes live now.
+ * Used by the list's bulk "Publish" action.
+ */
+export async function publishHonouringDate(post: Insight): Promise<Insight> {
+  const now = Date.now();
+  const intended = post.published_at ?? post.scheduled_at;
+  const when =
+    intended && new Date(intended).getTime() > now
+      ? intended
+      : new Date().toISOString();
+  return updateInsight(post.id, {
+    status: "published",
+    published_at: when,
+    scheduled_at: null,
+  });
+}
+
 // Slug helper: lowercase, spaces→hyphens, strip non-url-safe chars.
 export function slugify(input: string): string {
   return input
