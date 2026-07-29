@@ -92,7 +92,11 @@ async function generatePost(
   const titles = corpus.map((c) => `- ${c.title}`).join('\n')
   const openings = corpus.slice(0, 12).map((c) => `- "${c.opening}"`).join('\n')
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  // Retry the model call — a single transient error (rate limit, blip) must not
+  // cause the whole week to silently miss a post.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+   try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -143,18 +147,25 @@ Return ONLY a valid JSON object with exactly these fields:
 No markdown fences, no explanation — just the raw JSON object.`,
       }],
     }),
-  })
-
-  const data = await res.json()
-  if (!res.ok) return null
-  const text = data.content?.[0]?.text ?? ''
-  const match = text.match(/\{[\s\S]*\}/)
-  if (!match) return null
-  try {
-    return JSON.parse(match[0])
-  } catch {
-    return null
+    })
+      if (res.ok) {
+        const data = await res.json()
+        const text = data.content?.[0]?.text ?? ''
+        const match = text.match(/\{[\s\S]*\}/)
+        if (match) {
+          try {
+            return JSON.parse(match[0])
+          } catch {
+            /* bad JSON — fall through to retry */
+          }
+        }
+      }
+   } catch {
+      /* network error — fall through to retry */
+   }
+   if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 2000))
   }
+  return null
 }
 
 async function generateImage(
