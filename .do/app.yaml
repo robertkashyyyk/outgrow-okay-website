@@ -1,0 +1,49 @@
+name: shark-app
+region: lon
+domains:
+- domain: outgrowokay.com
+  type: PRIMARY
+  zone: outgrowokay.com
+- domain: www.outgrowokay.com
+  type: ALIAS
+  zone: outgrowokay.com
+features:
+- buildpack-stack=ubuntu-22
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+ingress:
+  rules:
+  - component:
+      name: outgrow-okay-website
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /
+services:
+- name: outgrow-okay-website
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: robertkashyyyk/outgrow-okay-website
+  build_command: npm run build
+  run_command: node server/index.mjs
+  environment_slug: node-js
+  source_dir: /
+  http_port: 8080
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  instance_count: 1
+  envs:
+  - key: VITE_SUPABASE_URL
+    scope: BUILD_TIME
+    value: https://isldzythfgmxvyfgveji.supabase.co
+  - key: VITE_SUPABASE_ANON_KEY
+    scope: BUILD_TIME
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzbGR6eXRoZmdteHZ5Zmd2ZWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjg0ODUsImV4cCI6MjA5NTc0NDQ4NX0.207jq6Q54OHiyVmRpooZKTot1M1qObB7fjxbfpEiYzM
+  - key: SUPABASE_URL
+    scope: RUN_AND_BUILD_TIME
+    value: https://isldzythfgmxvyfgveji.supabase.co
+  - key: SUPABASE_ANON_KEY
+    scope: RUN_AND_BUILD_TIME
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzbGR6eXRoZmdteHZ5Zmd2ZWppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNjg0ODUsImV4cCI6MjA5NTc0NDQ4NX0.207jq6Q54OHiyVmRpooZKTot1M1qObB7fjxbfpEiYzM
