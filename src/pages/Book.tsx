@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight, CalendarPlus, ChevronLeft, ChevronRight, Video, Check } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Lockup } from "../components/Logo";
+import { Header } from "../sections/Header";
 import { Footer } from "../sections/Footer";
 import { useGround } from "../components/useGround";
 
@@ -221,16 +221,8 @@ export function Book() {
     setSubmitting(false);
   }
 
-  // Minimal header — wordmark only, matches the rest of the site.
-  const PageHeader = (
-    <header className="px-5 py-5">
-      <div className="mx-auto max-w-content">
-        <Link to="/" aria-label="Outgrow Okay — home">
-          <Lockup ground="ink" className="h-7" />
-        </Link>
-      </div>
-    </header>
-  );
+  // Shared floating pill header, site-wide.
+  const PageHeader = <Header />;
 
   // ── Confirmation screen ───────────────────────────────────────────────────
   if (booking) {

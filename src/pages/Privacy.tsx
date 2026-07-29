@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { Lockup } from "../components/Logo";
+import { Header } from "../sections/Header";
 import { Footer } from "../sections/Footer";
 import { useGround } from "../components/useGround";
 
@@ -14,20 +14,7 @@ export function Privacy() {
   useGround("light");
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 py-5">
-        <div className="mx-auto max-w-content flex items-center justify-between">
-          <Link to="/" aria-label="Outgrow Okay — home">
-            <Lockup ground="bone" className="h-7" />
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm text-muted hover:text-content transition-colors duration-fast"
-          >
-            <ArrowLeft size={16} strokeWidth={1.5} aria-hidden />
-            Home
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       <main className="flex-1 px-5 py-9">
         <div className="mx-auto max-w-prose">

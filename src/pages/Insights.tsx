@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
-import { Lockup } from "../components/Logo";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Header } from "../sections/Header";
 import { Footer } from "../sections/Footer";
 import { Reveal } from "../components/Reveal";
 import { useGround } from "../components/useGround";
@@ -45,20 +45,7 @@ export function Insights() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 py-5">
-        <div className="mx-auto max-w-content flex items-center justify-between">
-          <Link to="/" aria-label="Outgrow Okay — home">
-            <Lockup ground="ink" className="h-7" />
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm text-muted hover:text-content transition-colors duration-fast"
-          >
-            <ArrowLeft size={16} strokeWidth={1.5} aria-hidden />
-            Home
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       <main className="flex-1 px-5 py-16">
         <div className="mx-auto max-w-content">

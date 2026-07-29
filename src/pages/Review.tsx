@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Loader2, Mail } from "lucide-react";
-import { Lockup } from "../components/Logo";
+import { Header } from "../sections/Header";
 import { Footer } from "../sections/Footer";
 import { useGround } from "../components/useGround";
 import { ReviewKitPanel } from "../components/ReviewKitPanel";
@@ -56,13 +56,7 @@ export function Review() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 py-5">
-        <div className="mx-auto max-w-content">
-          <Link to="/" aria-label="Outgrow Okay — home">
-            <Lockup ground="ink" className="h-7" />
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       <main className="flex-1 px-5 py-8">
         <div className="mx-auto max-w-content">

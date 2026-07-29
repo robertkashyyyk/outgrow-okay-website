@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { Lockup } from "../components/Logo";
+import { Header } from "../sections/Header";
 import { Footer } from "../sections/Footer";
 import { Reveal } from "../components/Reveal";
 import { useGround } from "../components/useGround";
@@ -62,14 +62,7 @@ export function InsightPost() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="px-5 py-5">
-        <div className="mx-auto max-w-content flex items-center justify-between">
-          <Link to="/" aria-label="Outgrow Okay — home">
-            <Lockup ground="ink" className="h-7" />
-          </Link>
-          {BackLink}
-        </div>
-      </header>
+      <Header />
 
       <main className="flex-1 px-5 py-12">
         <div className="mx-auto max-w-prose">
