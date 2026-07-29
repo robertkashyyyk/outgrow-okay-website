@@ -8,6 +8,7 @@ import {
   Inbox,
   Globe,
   Wallet,
+  UserPlus,
   Settings,
 } from "lucide-react";
 import { Navigate, useLocation } from "react-router-dom";
@@ -26,6 +27,7 @@ const NAV: NavItem[] = [
   { to: "/studio/proposals", label: "Proposals", icon: FileSignature },
   { to: "/studio/report-funnel", label: "Report Funnel", icon: Inbox },
   { to: "/studio/site-review", label: "Website Review", icon: Globe },
+  { to: "/studio/invites", label: "Invites", icon: UserPlus },
   { to: "/studio/settings", label: "Settings", icon: Settings, soon: true },
 ];
 

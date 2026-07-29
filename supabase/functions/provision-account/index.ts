@@ -38,6 +38,11 @@ function json(body: unknown, status = 200) {
   })
 }
 
+// NOTE: the stated link lifetime below must match the project's "Email OTP Expiration"
+// (Dashboard → Auth → Providers → Email). That one dial governs every emailed link —
+// invite, recovery, magic link, confirmation, email change — so keep this copy in sync
+// with it. Currently set to 8 hours (a deliberate override of the auth_otp_long_expiry
+// advisor, chosen so invited users aren't defeated by a short window).
 function inviteHtml(firstName: string, actionLink: string): string {
   return `
     <div style="font-family: 'IBM Plex Sans', Helvetica, Arial, sans-serif; max-width: 540px; margin: 0 auto; background: ${BONE}; color: ${INK}; padding: 40px 36px; border-radius: 12px;">
@@ -45,7 +50,7 @@ function inviteHtml(firstName: string, actionLink: string): string {
       <p style="font-size: 16px; line-height: 1.6; margin: 0 0 18px;">Hi ${firstName},</p>
       <p style="font-size: 16px; line-height: 1.6; margin: 0 0 24px;">We&rsquo;ve set up your Outgrow Okay account. Click below to choose a password and sign in — the link is just for you.</p>
       <a href="${actionLink}" style="display: inline-block; background: ${ACCENT}; color: ${INK}; padding: 14px 28px; border-radius: 8px; font-size: 15px; font-weight: 700; text-decoration: none; margin-bottom: 24px;">Set your password</a>
-      <p style="font-size: 14px; line-height: 1.65; color: ${GREY_500}; margin: 0 0 16px;">For your security this link expires after 24 hours. If it lapses, just let us know and we&rsquo;ll send a fresh one.</p>
+      <p style="font-size: 14px; line-height: 1.65; color: ${GREY_500}; margin: 0 0 16px;">For your security this link expires after 8 hours. If it lapses, just let us know and we&rsquo;ll send a fresh one.</p>
       <p style="font-size: 15px; line-height: 1.6; margin: 0 0 4px;">Speak soon,</p>
       <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px;">${FOUNDER_NAME}<br/>Outgrow Okay</p>
       <hr style="border: none; border-top: 1px solid ${GREY_200}; margin: 0 0 16px;" />

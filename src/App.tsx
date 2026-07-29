@@ -26,6 +26,7 @@ import { ReportFunnelList } from "./pages/studio/report-funnel/ReportFunnelList"
 import { ReportFunnelDetail } from "./pages/studio/report-funnel/ReportFunnelDetail";
 import { SiteReviewPage } from "./pages/studio/site-review/SiteReviewPage";
 import { SiteReviewDetail } from "./pages/studio/site-review/SiteReviewDetail";
+import { PendingInvites } from "./pages/studio/invites/PendingInvites";
 import { InsightsList } from "./pages/studio/insights/InsightsList";
 import { InsightEditor } from "./pages/studio/insights/InsightEditor";
 import { ContentEngine } from "./pages/studio/insights/ContentEngine";
@@ -82,6 +83,7 @@ function App() {
           <Route path="report-funnel/:id" element={<ReportFunnelDetail />} />
           <Route path="site-review" element={<SiteReviewPage />} />
           <Route path="site-review/:id" element={<SiteReviewDetail />} />
+          <Route path="invites" element={<PendingInvites />} />
         </Route>
 
         {/* Customer area */}

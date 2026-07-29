@@ -71,10 +71,10 @@ export function Welcome() {
             <p className="mt-6 text-base text-muted">
               This link has expired or already been used. Email{" "}
               <a
-                href="mailto:hello@kashyyyk.co.uk"
+                href="mailto:hello@outgrowokay.com"
                 className="text-muted underline underline-offset-4 hover:text-content transition-colors duration-fast"
               >
-                hello@kashyyyk.co.uk
+                hello@outgrowokay.com
               </a>{" "}
               and we’ll send you a fresh one.
             </p>
